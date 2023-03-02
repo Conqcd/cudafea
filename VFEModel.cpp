@@ -84,7 +84,7 @@ void VFEModel::parse_input_line(std::string line)
             index = CommandM[ commandstr ];
             else
         {
-            printf("%d: ERROR: command %s does not exist, please check script file\n", MPIrank, commandstr.c_str());
+            printf("ERROR: command %s does not exist, please check script file\n", commandstr.c_str());
             return;
         }
         
@@ -93,7 +93,7 @@ void VFEModel::parse_input_line(std::string line)
         else
             InputM[ index ] = "";
         
-        printf("%d: COMMAND %d:  %s,  DATA: %s \n", MPIrank, index, commandstr.c_str(), (InputM[index]).c_str() );
+        printf("COMMAND %d:  %s,  DATA: %s \n", index, commandstr.c_str(), (InputM[index]).c_str() );
     }// if non-empty line
     
 }// parse_input_line()

@@ -23,8 +23,8 @@ GradientMatrix::~GradientMatrix()
 
 void GradientMatrix::destroy()
 {
-    ierr = MatDestroy(&matrix);  CHKERRQ(ierr);
-    ierr = MatDestroy(&transpose); CHKERRQ(ierr);
+    MatDestroy(&matrix); 
+    MatDestroy(&transpose);
     return 0;
 }
 
@@ -35,7 +35,7 @@ void GradientMatrix::create()
     double tempA = a, tempB = b, tempC = c;
     
     // now the gradient (or B) matrices
-    ierr = MatCreateSeqDense(PETSC_COMM_SELF, 6, 24, PETSC_NULL, &matrix);  CHKERRQ(ierr);
+    MatCreateSeqDense(PETSC_COMM_SELF, 6, 24, PETSC_NULL, &matrix);
 	
 	double x[8],y[8],z[8];
     double a, b, c, d, e, f, g, h, l;
@@ -91,29 +91,29 @@ void GradientMatrix::create()
         temp = a * diffMtx(n, 0, i) - b * diffMtx(n, 1, i) + c * diffMtx(n, 2, i);
         temp = temp / Jdet;
         
-        ierr = MatSetValue(matrix, 0, 0 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(matrix, 3, 1 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(matrix, 5, 2 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
+        MatSetValue(matrix, 0, 0 + 3 * i, temp, INSERT_VALUES);
+        MatSetValue(matrix, 3, 1 + 3 * i, temp, INSERT_VALUES);
+        MatSetValue(matrix, 5, 2 + 3 * i, temp, INSERT_VALUES);
         
         temp = -d * diffMtx(n, 0, i) + e * diffMtx(n, 1, i) - f * diffMtx(n, 2, i);
         temp = temp / Jdet;
         
         
-        ierr = MatSetValue(matrix, 1, 1 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(matrix, 3, 0 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(matrix, 4, 2 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
+        MatSetValue(matrix, 1, 1 + 3 * i, temp, INSERT_VALUES);
+        MatSetValue(matrix, 3, 0 + 3 * i, temp, INSERT_VALUES);
+        MatSetValue(matrix, 4, 2 + 3 * i, temp, INSERT_VALUES);
         
         temp = g * diffMtx(n, 0, i) - h * diffMtx(n, 1, i) + l * diffMtx(n, 2, i);
         temp = temp / Jdet;
         
         
-        ierr = MatSetValue(matrix, 2, 2 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(matrix, 4, 1 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(matrix, 5, 0 + 3 * i, temp, INSERT_VALUES); CHKERRQ(ierr);
+        MatSetValue(matrix, 2, 2 + 3 * i, temp, INSERT_VALUES);
+        MatSetValue(matrix, 4, 1 + 3 * i, temp, INSERT_VALUES);
+        MatSetValue(matrix, 5, 0 + 3 * i, temp, INSERT_VALUES);
     }
 	
-    ierr = MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY);
 
     // create transpose
     MatTranspose(matrix, MAT_INITIAL_MATRIX, &transpose);
