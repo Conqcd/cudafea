@@ -9,7 +9,7 @@
 
 //========== CONSTRUCTOR / DESTRUCTOR
 
-VFEModel::VFEModel(const MPI_Comm mpicomm, const int rank) : comm(mpicomm), MPIrank(rank), solver(mpicomm, rank)
+VFEModel::VFEModel() : solver()
 {
 }
 
@@ -130,7 +130,6 @@ void VFEModel::output_input_flag()
 
 void VFEModel::read_script_file(const char *filename)
 {
-    MPI_Barrier(comm);
     startT = MPI_Wtime(); 
     
     bool          OK(true);
@@ -139,12 +138,9 @@ void VFEModel::read_script_file(const char *filename)
     // set default script/model file format
     SCRIPTVERSION = 2;
     
-    MPI_Comm_size(comm, &MPIsize);
     
     // SET SCRIPTFILE
     strcpy(solver.SCRIPTFILE, filename);
-    if( MPIrank == MASTER )
-        printf("%d: MPIsize = %zd \n", MPIrank, MPIsize);
     
     int command(0);
     int totalscript(0);
@@ -154,53 +150,49 @@ void VFEModel::read_script_file(const char *filename)
     create_command_map();
     
     // read commands from script into Input map
-    if(MPIrank == MASTER)
+    
+    // open script file
+    std::ifstream scriptF(filename);
+    if(scriptF)
     {
-        // open script file
-        std::ifstream scriptF(filename);
-        if(scriptF)
+        try
         {
-            try
-            {
-                printf("%d: about to read from the script file : %s \n", MPIrank,filename);
-                int i(0);
-                
-                // for each line in script
-                for (std::string line; getline(scriptF, line); )
-                    parse_input_line(line);
+            printf("about to read from the script file : %s \n", filename);
+            int i(0);
+            
+            // for each line in script
+            for (std::string line; getline(scriptF, line); )
+                parse_input_line(line);
 
-                // add finish command
-                InputM[CMD_FINISH] = " ";
-                
-                totalscript = InputM.size();
-                itr = InputM.begin();
-            }// try this
-            catch( std::exception &e )
-            {
-                printf("%d: ERROR: could not read script file \n", MPIrank);
-                std::cerr << "exception caught: " << e.what() << std::endl;
-                OK = false;
-                
-                output_end_flag(OK);
-                
-                return;
-            }// catch this
-            scriptF.close();
-        }// if file exists
-        else
+            // add finish command
+            InputM[CMD_FINISH] = " ";
+            
+            totalscript = InputM.size();
+            itr = InputM.begin();
+        }// try this
+        catch( std::exception &e )
         {
-            printf("%d: ERROR: could not find script file \n", MPIrank);
+            printf("ERROR: could not read script file \n");
+            std::cerr << "exception caught: " << e.what() << std::endl;
+            OK = false;
+            
+            output_end_flag(OK);
+            
             return;
-        }
-        
-        itr = InputM.begin();
-        
-    }// if MASTER
+        }// catch this
+        scriptF.close();
+    }// if file exists
+    else
+    {
+        printf("ERROR: could not find script file \n");
+        return;
+    }
     
-    MPI_Bcast( &totalscript, 1, MPI_INT, MASTER, comm );
+    itr = InputM.begin();
+        
     
-    if( MPIrank == MASTER )
-        printf("%d: script read, totalinput = %d \n", MPIrank, totalscript);
+    
+    printf("script read, totalinput = %d \n",totalscript);
     
     int in(0);
     int count(0);
@@ -211,12 +203,11 @@ void VFEModel::read_script_file(const char *filename)
     {// while OK and not finished
         
         // check if setup done, else read from script input
-        if(MPIrank == MASTER)
         {// get command
             
             if( solver.IsSetupDone() && !solver.SOLVE_DONE )
             {
-                printf("%d: set up is done, about to solve \n", MPIrank);
+                printf("set up is done, about to solve \n");
                 command = CMD_SOLVE;
                 // no data string for SOLVE;
                 
@@ -237,32 +228,26 @@ void VFEModel::read_script_file(const char *filename)
             }
         }// if MASTER
         
-        MPI_Bcast(&command, 1, MPI_INT, MASTER, comm);
         
         OK = execute_command(command);
-        if( MPIrank == MASTER )
-           printf("%d: command (%d) executed and OK = %d\n", MPIrank, command, OK);
+        printf("command (%d) executed and OK = %d\n", command, OK);
         
     }// for each input line
     
     if( !OK ) // if something went wrong with setup
     {
-        printf("%d: ERROR: could not continue reading script, something went wrong \n", MPIrank);
+        printf("ERROR: could not continue reading script, something went wrong \n");
         return;
     }
     else
     {
-        if( MPIrank == MASTER )
-            printf("%d: all OK \n", MPIrank);
+        printf("all OK \n");
     }
     
     endT = MPI_Wtime();
     
-    if( MPIrank == MASTER )
-    {
-        output_end_flag(OK);
-        printf("%d: total time = %le \n", MPIrank, endT-startT);
-    }
+    output_end_flag(OK);
+    printf("total time = %le \n", endT - startT);
     
 }// read_script_file();
 
@@ -277,16 +262,11 @@ bool VFEModel::execute_command(int command)
         
         case CMD_SET_SCRIPT_VERSION : // SET SCRIPT VERSION --
         {
-            if( MPIrank == MASTER )
-            {
-                OK = ( sscanf( data, " %d \n", &SCRIPTVERSION ) == 1 );
-            }
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            OK = ( sscanf( data, " %d \n", &SCRIPTVERSION ) == 1 );
             // if not 2, assume default, i.e. previous, formats (default = 1)
             // NOTE: any int that's not 2 indicates default
             if( OK )
             {
-                MPI_Bcast( &SCRIPTVERSION, 1, MPI_INT, MASTER, comm );
                 solver.SCRIPTVERSION = SCRIPTVERSION ;
             }
             break;
@@ -294,12 +274,9 @@ bool VFEModel::execute_command(int command)
         case CMD_SET_VOXEL_SIZE : // SET VOXEL SIZE, SCALE FACTOR
         {
             double vsize[4]; // {a, b, c, sf};
-            if (MPIrank == MASTER)
-                OK = ( sscanf( data, " %lf %lf %lf %lf \n", &vsize[0], &vsize[1], &vsize[2], &vsize[3]) == 4 );
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            OK = ( sscanf( data, " %lf %lf %lf %lf \n", &vsize[0], &vsize[1], &vsize[2], &vsize[3]) == 4 );
             if (OK)
             {
-                MPI_Bcast(vsize, 4, MPI_DOUBLE, MASTER, comm);
                 OK = solver.SetVoxelSize( vsize[0], vsize[1], vsize[2], vsize[3] );
             }
             break;
@@ -308,16 +285,10 @@ bool VFEModel::execute_command(int command)
         {
             char materialsfn[MAX_FILENAME_LENGTH];
             int materialsfnlen(0);
-            if (MPIrank == MASTER)
-            {
-                OK = ( sscanf( data, " %s \n", &materialsfn ) == 1 );
-                materialsfnlen = strlen(materialsfn) + 1;
-            }
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            OK = ( sscanf( data, " %s \n", &materialsfn ) == 1 );
+            materialsfnlen = strlen(materialsfn) + 1;
             if (OK)
             {
-                MPI_Bcast( &materialsfnlen, 1, MPI_INT, MASTER, comm);
-                MPI_Bcast(materialsfn, materialsfnlen, MPI_CHAR, MASTER, comm);
                 OK = solver.LoadMaterials( materialsfn );
             }
             break;
@@ -328,33 +299,25 @@ bool VFEModel::execute_command(int command)
             xyzType totelems;
             char modelfn[MAX_FILENAME_LENGTH];
             int modelfnlen(0);
-            if (MPIrank == MASTER)
-            {
-                if( SCRIPTVERSION != 2 ) // default
-                    OK = (sscanf(data, " %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &modelfn) == 4);
-                else
-                    OK = (sscanf(data, " %d %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &totelems, &modelfn) == 5);
-                    
-                modelfnlen = strlen(modelfn) + 1;
-            }
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            if( SCRIPTVERSION != 2 ) // default
+                OK = (sscanf(data, " %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &modelfn) == 4);
+            else
+                OK = (sscanf(data, " %d %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &totelems, &modelfn) == 5);
+                
+            modelfnlen = strlen(modelfn) + 1;
             if (OK)
             {
-                MPI_Bcast(vdims, 3, MPI_DOUBLE, MASTER, comm);
                 OK = solver.SetVoxelDimensions( vdims[0], vdims[1], vdims[2]);
                 if (OK)
                 {
                     if (SCRIPTVERSION == 2)
                     {
-                        MPI_Bcast( &totelems, 1, MPI_INT, MASTER, comm );
                         OK = solver.SetTotElems( totelems );
                     }
                 }
             }
             if (OK)
             {
-                MPI_Bcast(&modelfnlen, 1, MPI_INT, MASTER, comm);
-                MPI_Bcast(modelfn, modelfnlen, MPI_CHAR, MASTER, comm);
                 OK = solver.LoadModel(modelfn);
             }
             break;
@@ -363,12 +326,9 @@ bool VFEModel::execute_command(int command)
         case CMD_SET_TOLERANCE: // TOLERANCE
         {
             double thetolerance;
-            if (MPIrank == MASTER)
-                OK = (sscanf(data, " %lf \n", &thetolerance) == 1);
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            OK = (sscanf(data, " %lf \n", &thetolerance) == 1);
             if (OK)
             {
-                MPI_Bcast(&thetolerance, 1, MPI_DOUBLE, MASTER, comm);
                 OK = solver.SetTolerance(thetolerance);
             }
             break;
@@ -377,12 +337,9 @@ bool VFEModel::execute_command(int command)
         case CMD_SET_MAX_ITER : // MAX ITERATION
         {
             long int themaxiter;
-            if (MPIrank == MASTER)
-                OK = (sscanf(data, " %d \n", &themaxiter) == 1);
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            OK = (sscanf(data, " %d \n", &themaxiter) == 1);
             if (OK)
             {
-                MPI_Bcast( &themaxiter, 1, MPI_LONG_INT, MASTER, comm );
                 OK = solver.SetMaxIter( themaxiter );
             }
             break;
@@ -395,29 +352,21 @@ bool VFEModel::execute_command(int command)
             int solvertypelen;
             int pctypelen;
             int nargs;
-            if (MPIrank == MASTER)
+            nargs = sscanf(data, " %s  %s \n", &thesolvertype, &thepctype);
+
+            if (nargs == 1)
             {
-                nargs = sscanf(data, " %s  %s \n", &thesolvertype, &thepctype);
+                strcpy(thepctype, "");
+                OK = true;
+            }
+            if (nargs == 2)
+                OK = true;
 
-                if (nargs == 1)
-                {
-                    strcpy(thepctype, "");
-                    OK = true;
-                }
-                if (nargs == 2)
-                    OK = true;
+            solvertypelen = strlen(thesolvertype);
+            pctypelen = strlen(thepctype);
 
-                solvertypelen = strlen(thesolvertype);
-                pctypelen = strlen(thepctype);
-
-            }// if master
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
             if (OK)
             {
-                MPI_Bcast(&solvertypelen, 1, MPI_INT, MASTER, comm);
-                MPI_Bcast(&pctypelen, 1, MPI_INT, MASTER, comm);
-                MPI_Bcast(thesolvertype, solvertypelen, MPI_CHAR, MASTER, comm);
-                MPI_Bcast(thepctype, pctypelen, MPI_CHAR, MASTER, comm);
                 OK = solver.SetAlgorithmFEA(thesolvertype, thepctype);
             }
             break;
@@ -433,16 +382,10 @@ bool VFEModel::execute_command(int command)
         {
             char constraintsfn[MAX_FILENAME_LENGTH];
             int constraintsfnlen(0);
-            if (MPIrank == MASTER)
-            {
-                OK = (sscanf(data, " %s \n", &constraintsfn) == 1);
-                constraintsfnlen = strlen(constraintsfn) + 1;
-            }
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            OK = (sscanf(data, " %s \n", &constraintsfn) == 1);
+            constraintsfnlen = strlen(constraintsfn) + 1;
             if (OK)
             {
-                MPI_Bcast(&constraintsfnlen, 1, MPI_INT, MASTER, comm);
-                MPI_Bcast(constraintsfn, constraintsfnlen, MPI_CHAR, MASTER, comm);
                 OK = solver.LoadConstraints(constraintsfn);
             }
             break;
@@ -451,16 +394,10 @@ bool VFEModel::execute_command(int command)
         {
             char NastranFN[MAX_FILENAME_LENGTH];
             int Nastranfnlen(0);
-            if (MPIrank == MASTER)
-            {
-                OK = (sscanf(data, " %s \n", &constraintsfn) == 1);
-                Nastranfnlen = strlen(constraintsfn) + 1;
-            }
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            OK = (sscanf(data, " %s \n", &NastranFN) == 1);
+            Nastranfnlen = strlen(NastranFN) + 1;
             if (OK)
             {
-                MPI_Bcast(&Nastranfnlen, 1, MPI_INT, MASTER, comm);
-                MPI_Bcast(NastranFN, Nastranfnlen, MPI_CHAR, MASTER, comm);
                 OK = solver.toNASTRAN(NastranFN);
             }
             break;
@@ -492,31 +429,26 @@ bool VFEModel::execute_command(int command)
         case CMD_PRINT_DISPLACEMENTS : // PRINT DISPLACEMENTS
         {
             // only MASTER process prints displacements (for now)
-            if (MPIrank == MASTER)
+            if (solver.SOLVE_DONE)
             {
-                if (solver.SOLVE_DONE)
-                {
-                    char outputfn[MAX_FILENAME_LENGTH];
-                    OK = (sscanf(data, " %s \n", &outputfn) == 1);
-                    if (OK)
-                        OK = solver.PrintDisplacements(outputfn);
-               
-                }// if solve done
-                else
-                {
-                    printf( "%d: ERROR: cannot print displacements before solving! \n", MPIrank);
-                    OK = false;
-                }
-            }// if MASTER rank
+                char outputfn[MAX_FILENAME_LENGTH];
+                OK = (sscanf(data, " %s \n", &outputfn) == 1);
+                if (OK)
+                    OK = solver.PrintDisplacements(outputfn);
             
-            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            }// if solve done
+            else
+            {
+                printf( "%d: ERROR: cannot print displacements before solving! \n");
+                OK = false;
+            }
+            
             break;
         }
 
         case CMD_FINISH : // FINISHED READING SCRIPT
         {
-            if (MPIrank == MASTER)
-                printf( "%d: Finished reading script \n", MPIrank );
+            printf( "Finished reading script \n");
             // cleanup here
             solver.FINISH_DONE = true;
             OK =  true;
@@ -524,7 +456,7 @@ bool VFEModel::execute_command(int command)
             break;
         }
         default:
-            printf("%d: ERROR: command %d not recognised\n", MPIrank, command);
+            printf("ERROR: command %d not recognised\n", command);
     }
     
     return OK;

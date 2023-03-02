@@ -39,7 +39,6 @@ protected:
     PetscErrorCode create();
     PetscErrorCode destroy();
 
-    
 };
 
 #endif /* GRADIENTMATRIX_H */

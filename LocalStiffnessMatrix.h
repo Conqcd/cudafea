@@ -17,7 +17,6 @@ public:
     double poissonsr; // poissons ratio
     double a, b, c; // voxel sizes (x, y, z)
     
-    PetscErrorCode ierr; // petsc errorcode
     
     PetscScalar *matrix; // local stiffness matrix
     
@@ -39,10 +38,9 @@ public:
     
 protected:
     
-    PetscErrorCode create(GradientMatrix *GradientMatrices);
-    PetscErrorCode create();
+    void create(GradientMatrix *GradientMatrices);
+    void create();
     void destroy();
-
 };
 
 #endif /* LOCALSTIFFNESSMATRIX_H */

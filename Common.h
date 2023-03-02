@@ -6,11 +6,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "mpi.h"
-#include "petscdmda.h"
-#include "petscsys.h"
-#include "petscksp.h"
-#include "petsctime.h"
  
 #define SIGN(x) ((x > 0) - (x < 0))
 

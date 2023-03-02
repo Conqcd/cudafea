@@ -21,7 +21,7 @@
 #include "PropertyMatrix.h"
 #include "GradientMatrix.h"
 #include "LocalStiffnessMatrix.h"
-#include "petscversion.h"
+// #include "petscversion.h"
 
 template <class T, class P>
 struct compare {
@@ -49,10 +49,6 @@ class vFESolver
     
 public:
     
-    // MPI processor rank and number of processors
-    MPI_Comm    comm; // change
-    int         MPIrank;
-    int         MPIsize;
     
     //======================== MAPS / ITERATORS ======================
     
@@ -114,7 +110,7 @@ public:
     //================== CONSTRUCTOR / DESTRUCTOR
     
     // COLLECTIVE
-    vFESolver(const MPI_Comm comm, const int rank);
+    vFESolver();
     
     // Destructor, frees anything that was allocated
     // COLLECTIVE
@@ -207,12 +203,9 @@ public:
     
 protected:
     // Petsc error code
-    PetscErrorCode  ierr;
 
     GradientMatrix gradientMtx[SAMPLES_PER_ELEMENT];
     
-    // PETSc version
-    char petscVersionStr[MAX_FILENAME_LENGTH];
 
     std::vector<idxType> Idx_bias;
 	

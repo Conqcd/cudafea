@@ -11,9 +11,6 @@ class VFEModel{
 
 public:
     
-    MPI_Comm    comm;
-    int         MPIrank;
-    int         MPIsize;
     int         SCRIPTVERSION;
     
     char data[MAX_DATA_LENGTH];
@@ -32,7 +29,7 @@ public:
     // measure time
     double startT, endT;
     
-    VFEModel(const MPI_Comm mpicomm, const int mpirank);
+    VFEModel();
     ~VFEModel();
 
     // create map < command string , command enum>

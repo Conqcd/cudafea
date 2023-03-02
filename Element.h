@@ -16,6 +16,7 @@ template <typename T>
 class Element{
 public :
     T         x, y, z;
+    T         w, h, d;
     idxType   idx;
     midxType  material; // material idx 
     Node<T> * nodes[NODES_PER_ELEMENT];

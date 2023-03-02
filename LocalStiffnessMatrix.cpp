@@ -36,7 +36,7 @@ PetscErrorCode LocalStiffnessMatrix::create()
     }
     
     // create LSM
-    ierr = create(gradientMtx); CHKERRQ(ierr);
+    ierr = create(gradientMtx);
     
     return 0;
 }
@@ -52,19 +52,19 @@ PetscErrorCode LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
         // Build Property Matrix
         PropertyMatrix propMtx(youngsm, poissonsr);
         
-        ierr = MatCreateSeqDense(PETSC_COMM_SELF, lsmlen, lsmlen, PETSC_NULL, &LSM); CHKERRQ(ierr);
+        ierr = MatCreateSeqDense(PETSC_COMM_SELF, lsmlen, lsmlen, PETSC_NULL, &LSM);
         
         // assuming all 8 gradient matrices are available
         for (int n = 0; n < SAMPLES_PER_ELEMENT; ++n)
         {// per node n
             
-            ierr = MatMatMult(*(propMtx.getmat()), *(gradientMtx[n].getmat()), MAT_INITIAL_MATRIX, PETSC_DEFAULT, &propXgradMtx); CHKERRQ(ierr);
-            ierr = MatMatMult(*(gradientMtx[n].getmat_t()), propXgradMtx, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &tempMtx); CHKERRQ(ierr);
+            ierr = MatMatMult(*(propMtx.getmat()), *(gradientMtx[n].getmat()), MAT_INITIAL_MATRIX, PETSC_DEFAULT, &propXgradMtx); 
+            ierr = MatMatMult(*(gradientMtx[n].getmat_t()), propXgradMtx, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &tempMtx);
             
-            ierr = MatAXPY(LSM, gradientMtx[n].getJdet(), tempMtx, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+            ierr = MatAXPY(LSM, gradientMtx[n].getJdet(), tempMtx, DIFFERENT_NONZERO_PATTERN);
             
-            ierr = MatDestroy(&propXgradMtx); CHKERRQ(ierr);
-            ierr = MatDestroy(&tempMtx); CHKERRQ(ierr);
+            ierr = MatDestroy(&propXgradMtx);
+            ierr = MatDestroy(&tempMtx);
             
         }// per integration point i, gradient matrix
 
@@ -72,7 +72,7 @@ PetscErrorCode LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
         //ierr = MatScale(LSM, 1.0/1.1); CHKERRQ(ierr);
         //MatView(LSM, PETSC_VIEWER_STDOUT_WORLD);
         // Get LSM
-        ierr = MatDenseGetArray(LSM, (&matrix)); CHKERRQ(ierr);
+        ierr = MatDenseGetArray(LSM, (&matrix));
 
         return 0;
 }

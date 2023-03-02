@@ -28,12 +28,9 @@ protected:
     double poissonsr; // poisson's ratio
     
     Mat matrix; // petsc matrix
-    PetscErrorCode ierr; // petsc error code
 
-    PetscErrorCode create();
-    PetscErrorCode destroy();
-    
-    
+    void create();
+    void destroy();
 };
 
 
