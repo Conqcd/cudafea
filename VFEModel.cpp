@@ -447,7 +447,24 @@ bool VFEModel::execute_command(int command)
             }
             break;
         }
-
+        case CMD_TRANSFER_TO_NASTRAN:
+        {
+            char NastranFN[MAX_FILENAME_LENGTH];
+            int Nastranfnlen(0);
+            if (MPIrank == MASTER)
+            {
+                OK = (sscanf(data, " %s \n", &constraintsfn) == 1);
+                Nastranfnlen = strlen(constraintsfn) + 1;
+            }
+            MPI_Bcast(&OK, 1, MPI_INT, MASTER, comm);
+            if (OK)
+            {
+                MPI_Bcast(&Nastranfnlen, 1, MPI_INT, MASTER, comm);
+                MPI_Bcast(NastranFN, Nastranfnlen, MPI_CHAR, MASTER, comm);
+                OK = solver.toNASTRAN(NastranFN);
+            }
+            break;
+        }
         case  CMD_SELECT_NODE_3D: //
         {
             OK = true;

@@ -460,6 +460,11 @@ bool vFESolver::LoadConstraints(const char *filename){
 
 //==================== Output
 
+bool vFESolver::toNASTRAN(const char* fileanme)
+{
+    return true;
+}
+
 bool vFESolver::PrintDisplacements(const char *filename)
 {
     // get displacements from node and output 
@@ -821,75 +826,6 @@ PetscErrorCode vFESolver::AllocateLocalVec(Vec *vec)
     return 0;
 }
 
-PetscErrorCode vFESolver::AllocateLocalMatrix2(Mat* gsm)
-{
-    if (MPIrank == MASTER)
-        printf("%d: NodeS.size() = %d \n", MPIrank, Idx_bias.size());
-
-    if (MPIsize == 1)
-    {// IF SERIAL
-        localgsmrows = globalgsmrows;
-        localgsmcols = globalgsmcols;
-        localrhslength = globalgsmcols;
-        localsollength = globalgsmcols;
-
-        ierr = MatCreateSeqAIJ(comm, globalgsmrows, globalgsmcols, NUM_TERMS, PETSC_NULL, gsm); CHKERRQ(ierr);
-        ierr = MatSeqAIJSetPreallocation(*gsm, NUM_TERMS, PETSC_NULL); CHKERRQ(ierr);
-    }
-    else
-    {// IF PARALLEL
-        double gr(globalgsmrows);
-        double gc(globalgsmcols);
-        localgsmrows = floor(gr / MPIsize);
-        localgsmcols = floor(gc / MPIsize);
-
-        // if you are the top ranking process
-        // take remaining rows/columns
-        if (MPIrank == MPIsize - 1)
-        {
-            localgsmrows = gr - (MPIsize - 1) * floor(gr / MPIsize);
-            localgsmcols = gc - (MPIsize - 1) * floor(gc / MPIsize);
-        }
-
-        diagonalterms = NUM_TERMS;
-        offdiagonalterms = NUM_TERMS;
-
-        localrhslength = localgsmcols;
-        localsollength = localgsmcols;
-
-        printf("%d: GSM Alloc: lrows=%d, lcols=%d \n", MPIrank, localgsmrows, localgsmrows);
-
-        ierr = MatCreate(comm, gsm); CHKERRQ(ierr);
-        ierr = MatSetSizes(*gsm, localgsmrows, localgsmcols, globalgsmrows, globalgsmcols); CHKERRQ(ierr);
-        ierr = MatSetType(*gsm, MATMPIAIJ); CHKERRQ(ierr);
-        ierr = MatMPIAIJSetPreallocation(*gsm, diagonalterms, PETSC_NULL, offdiagonalterms, PETSC_NULL); CHKERRQ(ierr);
-
-    }
-
-    // check rows
-    PetscInt grows, gcols;
-    ierr = MatGetSize(*gsm, &grows, &gcols); CHKERRQ(ierr);
-
-    if (MPIrank == MASTER)
-        printf("%d: MatGetSize of GSM : rows=%d, cols=%d\n", MPIrank, grows, gcols);
-
-    return 0;
-}
-
-PetscErrorCode vFESolver::AllocateLocalVec2(Vec* vec)
-{
-    if (MPIsize == 1)
-    {// IF SERIAL
-        ierr = VecSetSizes(*vec, globalgsmrows, globalgsmrows); CHKERRQ(ierr);
-        ierr = VecSetType(*vec, VECSEQ); CHKERRQ(ierr);
-    }
-    else
-    {// IF PARALLEL
-        ierr = VecSetSizes(*vec, localgsmcols, globalgsmrows); CHKERRQ(ierr);
-        ierr = VecSetType(*vec, VECMPI); CHKERRQ(ierr);
-    }
-    return 0;
-}
 
 //=============== System matrices
 
@@ -1097,210 +1033,7 @@ PetscErrorCode vFESolver::ComputeGSM(Mat *GSM)
     return 0;
     
 }// computeGSM()
-PetscErrorCode vFESolver::ComputeGSM2(Mat* GSM)
-{
-    if (MPIrank == MASTER)
-        printf("%d: In GSM\n", MPIrank);
 
-    globalgsmrows = Idx_bias.size();
-    globalgsmcols = Idx_bias.size(); // NUM_TERMS = max number of non-zero elements per row
-
-    if (MPIrank == MASTER)
-        printf("%d: GSM ROWS [COLS] = %d \n", MPIrank, globalgsmrows);
-
-    MatInfo matinfo; // use to get matrix info
-
-    // allocate GSM rows
-    vFESolver::AllocateLocalMatrix2(GSM);
-
-
-    // inclusive of first, exclusive of last
-    PetscInt localfirst, locallast;
-    ierr = MatGetOwnershipRange(*GSM, &localfirst, &locallast); CHKERRQ(ierr);
-
-    printf("%d: GSM local owns : first row=%d, last row=%d \n", MPIrank, localfirst, locallast - 1);
-
-    idxType gsmcolcount(0);
-    std::map<idxType, idxType> tmp_gsmcolidx;
-    idxType currentcol(0);
-    PetscInt numcols(0);
-    PetscInt gsmCol[NUM_TERMS];
-    PetscInt gsmRowX[1], gsmRowY[1], gsmRowZ[1];
-
-    PetscScalar gsmvalRowX[NUM_TERMS]; // row-centric storage etc.
-    PetscScalar gsmvalRowY[NUM_TERMS];
-    PetscScalar gsmvalRowZ[NUM_TERMS];
-
-    bool consnodeX(1); // is curnode constrained in X dim Default is 1 (true)
-    bool consnodeY(1); // is curnode constrained in Y dim Default is 1 (true)
-    bool consnodeZ(1); // is curnode constrained in Z dim Default is 1 (true)
-
-    bool consnodeNeighbourX(1); // is curennode constrained in X dim Default is 1  (true)
-    bool consnodeNeighbourY(1); // is curennode constrained in X dim Default is 1  (true)
-    bool consnodeNeighbourZ(1); // is curennode constrained in X dim Default is 1  (true)
-
-    bool constraintX[DOF_3D] = { 1,1,1 }; // should X dim term be added to GSM Default is 1 (yes)
-    bool constraintY[DOF_3D] = { 1,1,1 }; // should Y dim term be added to GSM Default is 1 (yes)
-    bool constraintZ[DOF_3D] = { 1,1,1 }; // should Z dim term be added to GSM Default is 1 (yes)
-
-    ////////////////////////
-    // BUILD GSM BY LOOPING THROUGH NODES IN NodeS
-    ///////////////////////
-
-    unsigned int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
-
-    idxType nodecount(0); // renumbering of nodes
-    idxType nodes[NODES_PER_ELEMENT], renumNode(0), renumNodeNeighbour(0), nodeL(0), nodeNeighbourL(0);
-    idxType nodeG(0), elemNeighbourG(0), nodeNeighbourG(0);
-    idxType e, enn;
-    midxType materialidx;
-    xyzType c, colindex;
-
-    idxType count(0);
-
-    NodeSet_const_it cnitr;
-
-    for (cnitr = NodeS.begin(); cnitr != NodeS.end(); ++cnitr)
-    {
-
-        renumNode = vFESolver::GetNodeIndex(cnitr); // renumbered or local index
-
-        if (renumNode >= localfirst && renumNode < locallast) { // if this localrow is on rank
-
-            // reset stuff...
-            gsmcolcount = 0;
-            tmp_gsmcolidx.clear();
-
-            for (c = 0; c < NUM_TERMS; ++c) {
-                gsmCol[c] = 0;
-                gsmvalRowX[c] = 0;
-                gsmvalRowY[c] = 0;
-                gsmvalRowZ[c] = 0;
-            }
-
-            gsmRowX[0] = renumNode * DOF_3D + 0;
-            gsmRowY[0] = renumNode * DOF_3D + 1;
-            gsmRowZ[0] = renumNode * DOF_3D + 2;
-
-            Constraint<xyzType>* nodecons = vFESolver::GetNodeCons(cnitr);
-            if (nodecons) {
-                consnodeX = nodecons->cx;
-                consnodeY = nodecons->cy;
-                consnodeZ = nodecons->cz;
-            }
-            else {
-                consnodeX = 1;
-                consnodeY = 1;
-                consnodeZ = 1;
-            }
-
-            // enn = neighbour, e = elem
-            for (int elem = 0; elem < NODES_PER_ELEMENT; ++elem) {// for each element the node belongs to (max 8)
-
-                if (vFESolver::GetNodeElement(cnitr, elem)) {
-                    materialidx = vFESolver::GetElementMaterial(cnitr, elem);
-                    nodeL = elem;
-
-                    for (int neighbour = 0; neighbour < NODES_PER_ELEMENT; ++neighbour) {// for each neighbouring node on element e
-                        renumNodeNeighbour = vFESolver::GetNodeNeighbourIndex(cnitr, elem, neighbour); //get renumbered index
-
-                        if (tmp_gsmcolidx.find(renumNodeNeighbour) == tmp_gsmcolidx.end()) { // if neighbouring doesn't already have a column number
-                            tmp_gsmcolidx[renumNodeNeighbour] = gsmcolcount;
-                            ++gsmcolcount;
-                        }
-                        currentcol = tmp_gsmcolidx[renumNodeNeighbour];
-
-                        Constraint<xyzType>* neighbourcons = vFESolver::GetNodeNeighbourCons(cnitr, elem, neighbour);
-                        if (neighbourcons) {
-                            consnodeNeighbourX = neighbourcons->cx; // constrained //
-                            consnodeNeighbourY = neighbourcons->cy; // constrained //
-                            consnodeNeighbourZ = neighbourcons->cz; // constrained //
-                        }
-                        else {
-                            consnodeNeighbourX = 1;
-                            consnodeNeighbourY = 1;
-                            consnodeNeighbourZ = 1;
-                        }
-
-                        nodeNeighbourL = neighbour; // local index of neighbouring node on element e
-
-                        constraintX[0] = consnodeX && consnodeNeighbourX;
-                        constraintX[1] = consnodeX && consnodeNeighbourY;
-                        constraintX[2] = consnodeX && consnodeNeighbourZ;
-
-                        constraintY[0] = consnodeY && consnodeNeighbourX;
-                        constraintY[1] = consnodeY && consnodeNeighbourY;
-                        constraintY[2] = consnodeY && consnodeNeighbourZ;
-
-                        constraintZ[0] = consnodeZ && consnodeNeighbourX;
-                        constraintZ[1] = consnodeZ && consnodeNeighbourY;
-                        constraintZ[2] = consnodeZ && consnodeNeighbourZ;
-
-                        if (nodeL == nodeNeighbourL) {
-                            if (!consnodeX) {
-                                constraintX[0] = 1; constraintX[1] = 0; constraintX[2] = 0;
-                            }// if consnodeX
-                            if (!consnodeY) {
-                                constraintY[0] = 0; constraintY[1] = 1; constraintY[2] = 0;
-                            }// if consnodeY
-                            if (!consnodeZ) {
-                                constraintZ[0] = 0; constraintZ[1] = 0; constraintZ[2] = 1;
-                            }// if consnodeZ
-                        }// if diagonal element of GSM
-
-                        for (c = 0; c < 3; ++c) {// for each x,y,z component/column
-                            colindex = currentcol * DOF_3D + c;
-                            gsmCol[colindex] = renumNodeNeighbour * DOF_3D + c;
-
-                            int xrowidx = (nodeL * DOF_3D + 0) * lsmlen + nodeNeighbourL * DOF_3D + c;
-                            int yrowidx = (nodeL * DOF_3D + 1) * lsmlen + nodeNeighbourL * DOF_3D + c;
-                            int zrowidx = (nodeL * DOF_3D + 2) * lsmlen + nodeNeighbourL * DOF_3D + c;
-
-
-                            // add gsm value. Access correct LSM in MATERIALMAP using material index materialidx
-                            gsmvalRowX[colindex] += vFESolver::GetLSMValue(materialidx, xrowidx) * constraintX[c]; // x row
-                            gsmvalRowY[colindex] += vFESolver::GetLSMValue(materialidx, yrowidx) * constraintY[c]; // y row
-                            gsmvalRowZ[colindex] += vFESolver::GetLSMValue(materialidx, zrowidx) * constraintZ[c]; // z row
-
-                        }// for each component
-
-                    }// for each neighbouring node enn on element e
-                }// if valid element e
-            }// for each element e of current node
-
-            numcols = DOF_3D * gsmcolcount;
-
-            ierr = MatSetValues(*GSM, 1, gsmRowX, numcols, gsmCol, gsmvalRowX, INSERT_VALUES); CHKERRQ(ierr);
-            ierr = MatSetValues(*GSM, 1, gsmRowY, numcols, gsmCol, gsmvalRowY, INSERT_VALUES); CHKERRQ(ierr);
-            ierr = MatSetValues(*GSM, 1, gsmRowZ, numcols, gsmCol, gsmvalRowZ, INSERT_VALUES); CHKERRQ(ierr);
-
-            ++count;
-
-        }// if on local rank
-
-    }// for each node
-
-    ierr = MatAssemblyBegin(*GSM, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*GSM, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    //MatView(*GSM, PETSC_VIEWER_DRAW_WORLD);
-    //MatView(*GSM, PETSC_VIEWER_STDOUT_WORLD);
-
-    // Get info about GSM allocation etc.
-    MatInfo info;
-    double  mal, nz_a, nz_u, nz_un;
-
-    ierr = MatGetInfo(*GSM, MAT_LOCAL, &info); CHKERRQ(ierr);
-    mal = info.mallocs;
-    nz_a = info.nz_allocated;
-    nz_u = info.nz_used;
-    nz_un = info.nz_unneeded;
-
-    printf("%d: GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", MPIrank, mal, nz_a, nz_u, nz_un);
-    if (MPIrank == MASTER)
-        printf("%d: Leaving GSM\n", MPIrank);
-
-    return 0;
-}
 
 
 // Build RHS force vector
@@ -1334,35 +1067,7 @@ PetscErrorCode vFESolver::ComputeRHS(Vec *rhs){
     return 0;
     
 }// ComputeRHS()
-PetscErrorCode vFESolver::ComputeRHS2(Vec* rhs)
-{
-    PetscInt xs, ys, zs, nx, ny, nz;
-    int ii, jj, kk;
-    PetscInt size;
 
-    if (MPIrank == MASTER)
-        printf("%d: In computeRHS\n", MPIrank);
-
-    ierr = VecCreate(comm, rhs); CHKERRQ(ierr);
-
-    ierr = AllocateLocalVec2(rhs);
-
-    ierr = VecGetSize(*rhs, &size); CHKERRQ(ierr);
-
-    if (MPIrank == MASTER)
-        printf("%d: VecGetSize : size=%d\n", MPIrank, size);
-
-    ierr = VecSet(*rhs, 0); CHKERRQ(ierr);
-    ierr = VecSetValues(*rhs, totalrhs, forcecolidx, forcevalue, INSERT_VALUES); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(*rhs); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(*rhs); CHKERRQ(ierr);
-
-
-    if (MPIrank == MASTER)
-        printf("%d: Leaving RHS \n", MPIrank);
-
-    return 0;
-}
 
 
 //========== Solve

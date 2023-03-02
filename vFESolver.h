@@ -155,12 +155,12 @@ public:
   
     bool SetAlgorithmFEA(const char *thesolvertype, const char *thepctype);
     
+    bool toNASTRAN(const char* fileanme);
     //================ Solve
     
     // Solves the system, updating the node displacements
     // COLLECTIVE
     PetscErrorCode Solve();
-    PetscErrorCode Solve2();
     
     //================ Output
     
@@ -239,11 +239,9 @@ protected:
     
     // COLLECTIVE
     PetscErrorCode ComputeGSM(Mat *gsm);
-    PetscErrorCode ComputeGSM2(Mat* gsm);
     
     // COLLECTIVE
     PetscErrorCode ComputeRHS(Vec *rhs);
-    PetscErrorCode ComputeRHS2(Vec* rhs);
     
     //================ Allocate Local Rows / Columns (matrix / vec)
     
@@ -252,7 +250,6 @@ protected:
     PetscErrorCode AllocateLocalVec(Vec *vec);
 
 
-    PetscErrorCode AllocateLocalMatrix2(Mat* mat);
 
     PetscErrorCode AllocateLocalVec2(Vec* vec);
 
