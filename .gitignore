@@ -1,0 +1,13 @@
+build
+.vscode
+CMakeLists.txt.user
+constraint.txt
+InputCompleted.txt
+InputCompleted.txt
+material.txt
+model.txt
+vo.txt
+temp
+temp2
+ext
+FemSolver.rar
