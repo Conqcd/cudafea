@@ -21,14 +21,14 @@ GradientMatrix::~GradientMatrix()
     //destroy();
 }
 
-PetscErrorCode GradientMatrix::destroy()
+void GradientMatrix::destroy()
 {
     ierr = MatDestroy(&matrix);  CHKERRQ(ierr);
     ierr = MatDestroy(&transpose); CHKERRQ(ierr);
     return 0;
 }
 
-PetscErrorCode GradientMatrix::create()
+void GradientMatrix::create()
 {
     double temp;
 

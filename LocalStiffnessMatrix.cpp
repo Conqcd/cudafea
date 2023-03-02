@@ -25,7 +25,7 @@ LocalStiffnessMatrix::~LocalStiffnessMatrix()
 {}
 
 
-PetscErrorCode LocalStiffnessMatrix::create()
+void LocalStiffnessMatrix::create()
 {
     GradientMatrix gradientMtx[NODES_PER_ELEMENT];
     
@@ -36,13 +36,13 @@ PetscErrorCode LocalStiffnessMatrix::create()
     }
     
     // create LSM
-    ierr = create(gradientMtx);
+    create(gradientMtx);
     
     return 0;
 }
 
 
-PetscErrorCode LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
+void LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
 {
         matrix = new PetscScalar();
         

@@ -33,11 +33,10 @@ protected:
     double Jdet;
     Mat matrix; // petsc matrix
     Mat transpose; // transpose of pmatrix
-    PetscErrorCode ierr; // petsc errorcode
     
     
-    PetscErrorCode create();
-    PetscErrorCode destroy();
+    void create();
+    void destroy();
 
 };
 

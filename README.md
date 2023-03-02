@@ -1,2 +1,2 @@
 # femsolver
-finite element solver for voxel model
+gpu finite element solver for voxel model

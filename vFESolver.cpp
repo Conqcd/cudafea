@@ -5,7 +5,7 @@
 //============ Constructor / Destructor
 
 // COLLECTIVE
-vFESolver::vFESolver(const MPI_Comm mpicomm, const int rank) : comm(mpicomm), MPIrank(rank)
+vFESolver::vFESolver() 
 {
     // set all flags to false
     Init();
@@ -33,7 +33,6 @@ void vFESolver::Init()
     // set default script/model file format
     SCRIPTVERSION = 2;
     
-    MPI_Comm_size(comm, &MPIsize);
     
 }// Init()
 
@@ -62,7 +61,7 @@ bool vFESolver::SetVoxelSize(const double a, const double b, const double c, con
     }
     else
     {
-        printf("%d: ERROR: could not add voxelsizes and/or scale factor \n",MPIrank);
+        printf("ERROR: could not add voxelsizes and/or scale factor \n");
         // OK = false;
     }
     return OK;
@@ -146,8 +145,7 @@ bool vFESolver::SetAlgorithmFEA(const char *thesolvertype, const char *thepctype
 bool vFESolver::LoadMaterials(const char *filename)
 {
     strcpy( MATERIALSFILE, filename );
-    if( MPIrank == MASTER )
-        printf("%d: material file is %s \n", MPIrank, filename);
+    printf("material file is %s \n", filename);
     
     FILE * materialFile;
     
@@ -159,8 +157,7 @@ bool vFESolver::LoadMaterials(const char *filename)
     
     if(VOXELSIZE_DONE)
     {
-        if(MPIrank == MASTER)
-            printf("%d: Creating Material Map \n",MPIrank);
+        printf("Creating Material Map \n");
         
         // compute gradient matrices : needed for computing LSM of each material
         for(int n=0; n < SAMPLES_PER_ELEMENT; ++n){
@@ -168,19 +165,17 @@ bool vFESolver::LoadMaterials(const char *filename)
             gradientMtx[n] = GradientMatrix(A_SIZE, B_SIZE, C_SIZE, n);
         }
         
-        if( MPIrank == MASTER )
-            printf("%d: Opening material file \n", MPIrank);
+        printf("Opening material file \n");
         materialFile = fopen(filename, "r");
         errno = 0;
         if(materialFile == NULL)
         {
-            printf("%d: ERROR: could not open material file \n", MPIrank);
+            printf("ERROR: could not open material file \n");
             OK = false;
             return OK;
         }else
         {
-            if( MPIrank == MASTER )
-                printf("%d: material file open \n", MPIrank);
+            printf("material file open \n");
             
             while( fscanf(materialFile, "%d %lf %lf %d \n", &material_index, &youngs_mod, &poissons_rat, &remodel_flag) != EOF && OK )
             {// while
@@ -203,7 +198,7 @@ bool vFESolver::LoadMaterials(const char *filename)
     }// if voxel sizes specified
     else
     {
-        printf("%d: ERROR: voxel sizes must be specified before loading materials \n", MPIrank);
+        printf("ERROR: voxel sizes must be specified before loading materials \n");
         OK = false;
     }// voxel size or voxel dimensions not specified
     
@@ -225,12 +220,11 @@ bool vFESolver::LoadModel(const char *filename)
     OK = VOXELSIZE_DONE && VOXELDIMS_DONE && MATERIALS_DONE;
     if(!OK)
     {
-        printf("%d: ERROR: voxel size, dimensions and materials must be specified before loading model \n", MPIrank);
+        printf("ERROR: voxel size, dimensions and materials must be specified before loading model \n");
         return OK;
     }
     
-    if(MPIrank==MASTER)
-        printf("%d: Creating Element and Node Sets\n",MPIrank);
+    printf("Creating Element and Node Sets\n");
     
     modelFile = fopen(filename,"r");
     
@@ -756,63 +750,50 @@ Constraint<xyzType>* vFESolver::GetConstraint(const xyzType x, const xyzType y, 
 //================== Allocate system matrix / vector rows
 
 // allocate gsm rows and columns according to number of processes
-PetscErrorCode vFESolver::AllocateLocalMatrix(Mat *gsm)
+bool vFESolver::AllocateLocalMatrix(Mat *gsm)
 {
-    if(MPIrank == MASTER)
-        printf("%d: NodeS.size() = %d \n",MPIrank, NodeS.size());
+    printf("NodeS.size() = %d \n", NodeS.size());
     
-    if(MPIsize == 1)
-    {// IF SERIAL
-        localgsmrows = globalgsmrows;
-        localgsmcols = globalgsmcols;
-        localrhslength = globalgsmcols;
-        localsollength = globalgsmcols;
+    
+    // IF PARALLEL
+    double gr(globalgsmrows);
+    double gc(globalgsmcols);
+    localgsmrows = floor(gr / MPIsize);
+    localgsmcols = floor(gc / MPIsize);
+    
+    // if you are the top ranking process
+    // take remaining rows/columns
+    if (MPIrank == MPIsize - 1)
+    {
+        localgsmrows = gr - (MPIsize - 1) * floor(gr / MPIsize);
+        localgsmcols = gc - (MPIsize - 1) * floor(gc / MPIsize);
+    }
+    
+    diagonalterms = NUM_TERMS;
+    offdiagonalterms = NUM_TERMS;
+    
+    localrhslength = localgsmcols;
+    localsollength = localgsmcols;
+    
+    printf("%d: GSM Alloc: lrows=%d, lcols=%d \n",MPIrank, localgsmrows, localgsmrows);
 
-        ierr = MatCreateSeqAIJ(comm, globalgsmrows, globalgsmcols, NUM_TERMS, PETSC_NULL, gsm); CHKERRQ(ierr);
-        ierr = MatSeqAIJSetPreallocation(*gsm, NUM_TERMS, PETSC_NULL); CHKERRQ(ierr);
-    }
-    else
-    {// IF PARALLEL
-        double gr(globalgsmrows);
-        double gc(globalgsmcols);
-        localgsmrows = floor(gr / MPIsize);
-        localgsmcols = floor(gc / MPIsize);
-     
-        // if you are the top ranking process
-        // take remaining rows/columns
-        if (MPIrank == MPIsize - 1)
-        {
-            localgsmrows = gr - (MPIsize - 1) * floor(gr / MPIsize);
-            localgsmcols = gc - (MPIsize - 1) * floor(gc / MPIsize);
-        }
+    ierr = MatCreate(comm, gsm); CHKERRQ(ierr);
+    ierr = MatSetSizes(*gsm, localgsmrows, localgsmcols, globalgsmrows, globalgsmcols); CHKERRQ(ierr);
+    ierr = MatSetType(*gsm, MATMPIAIJ); CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(*gsm, diagonalterms, PETSC_NULL, offdiagonalterms, PETSC_NULL); CHKERRQ(ierr);
         
-        diagonalterms = NUM_TERMS;
-        offdiagonalterms = NUM_TERMS;
-        
-        localrhslength = localgsmcols;
-        localsollength = localgsmcols;
-        
-        printf("%d: GSM Alloc: lrows=%d, lcols=%d \n",MPIrank, localgsmrows, localgsmrows);
- 
-        ierr = MatCreate(comm, gsm); CHKERRQ(ierr);
-        ierr = MatSetSizes(*gsm, localgsmrows, localgsmcols, globalgsmrows, globalgsmcols); CHKERRQ(ierr);
-        ierr = MatSetType(*gsm, MATMPIAIJ); CHKERRQ(ierr);
-        ierr = MatMPIAIJSetPreallocation(*gsm, diagonalterms, PETSC_NULL, offdiagonalterms, PETSC_NULL); CHKERRQ(ierr);
-        
-    }
     
     // check rows
-    PetscInt grows, gcols;
-    ierr = MatGetSize(*gsm, &grows, &gcols); CHKERRQ(ierr);
+    int grows, gcols;
+    MatGetSize(*gsm, &grows, &gcols); CHKERRQ(ierr);
     
-    if(MPIrank == MASTER)
-        printf("%d: MatGetSize of GSM : rows=%d, cols=%d\n",MPIrank,grows, gcols);
+    printf("MatGetSize of GSM : rows=%d, cols=%d\n",MPIrank,grows, gcols);
     
     return 0;
 }
 
 // Allocate RHS rows according to number of processes
-PetscErrorCode vFESolver::AllocateLocalVec(Vec *vec)
+bool vFESolver::AllocateLocalVec(Vec *vec)
 {
     if(MPIsize == 1)
     {// IF SERIAL
@@ -831,7 +812,7 @@ PetscErrorCode vFESolver::AllocateLocalVec(Vec *vec)
 //=============== System matrices
 
 // Build Global Stiffness Matrix
-PetscErrorCode vFESolver::ComputeGSM(Mat *GSM)
+bool vFESolver::ComputeGSM(Mat *GSM)
 {
     if(MPIrank==MASTER)
         printf("%d: In GSM\n", MPIrank);
@@ -849,7 +830,7 @@ PetscErrorCode vFESolver::ComputeGSM(Mat *GSM)
     
     
     // inclusive of first, exclusive of last
-    PetscInt localfirst, locallast;
+    int localfirst, locallast;
     ierr = MatGetOwnershipRange(*GSM, &localfirst, &locallast); CHKERRQ(ierr);
     
     printf("%d: GSM local owns : first row=%d, last row=%d \n", MPIrank, localfirst, locallast - 1);
@@ -857,9 +838,9 @@ PetscErrorCode vFESolver::ComputeGSM(Mat *GSM)
     idxType gsmcolcount(0);
     std::map<idxType, idxType> tmp_gsmcolidx;
     idxType currentcol(0);
-    PetscInt numcols(0);
-    PetscInt gsmCol[NUM_TERMS];
-    PetscInt gsmRowX[1], gsmRowY[1], gsmRowZ[1];
+    int numcols(0);
+    int gsmCol[NUM_TERMS];
+    int gsmRowX[1], gsmRowY[1], gsmRowZ[1];
     
     PetscScalar gsmvalRowX[NUM_TERMS]; // row-centric storage etc.
     PetscScalar gsmvalRowY[NUM_TERMS];
@@ -1038,7 +1019,7 @@ PetscErrorCode vFESolver::ComputeGSM(Mat *GSM)
 
 
 // Build RHS force vector
-PetscErrorCode vFESolver::ComputeRHS(Vec *rhs){
+bool vFESolver::ComputeRHS(Vec *rhs){
     
     PetscInt xs,ys,zs,nx,ny,nz;
     int ii,jj,kk;
@@ -1079,7 +1060,7 @@ PetscErrorCode vFESolver::ComputeRHS(Vec *rhs){
 // only call this function if setup done and/or rebuild done
 
 // Solve linear elastic problem
-PetscErrorCode vFESolver::Solve(){
+bool vFESolver::Solve(){
     
     idxType ii(0);
     xyzType xx(0), yy(0), zz(0);
@@ -1090,8 +1071,8 @@ PetscErrorCode vFESolver::Solve(){
     Mat GSM;              // GSM
     Vec sol;              // solution
     Vec rhs;              // rhs (force) vector
-    PetscInt iters;       // number of iterations
-    PetscReal norm;       // norm
+    int iters;       // number of iterations
+    float norm;       // norm
 
     if (MPIrank == MASTER)
         printf("%d: In solve \n", MPIrank);
@@ -1209,135 +1190,6 @@ PetscErrorCode vFESolver::Solve(){
     return 0;
     
 }// Solve()
-PetscErrorCode vFESolver::Solve2()
-{
-    idxType ii(0);
-    xyzType xx(0), yy(0), zz(0);
-    idxType  nodeidx;
-    FILE* outFile;
-
-    PC prec;              // preconditioner
-    Mat GSM;              // GSM
-    Vec sol;              // solution
-    Vec rhs;              // rhs (force) vector
-    PetscInt iters;       // number of iterations
-    PetscReal norm;       // norm
-
-    if (MPIrank == MASTER)
-        printf("%d: In solve \n", MPIrank);
-
-    ierr = KSPCreate(comm, &ksp); CHKERRQ(ierr);
-
-    if (MPIrank == MASTER)
-        printf("%d: Created KSP \n", MPIrank);
-
-    ierr = vFESolver::ComputeGSM2(&GSM); CHKERRQ(ierr);
-    ierr = vFESolver::ComputeRHS2(&rhs); CHKERRQ(ierr);
-
-    ierr = VecCreate(comm, &sol); CHKERRQ(ierr);
-
-    vFESolver::AllocateLocalVec2(&sol);
-
-#if PETSC_VERSION_LT(3,5,1)
-    KSPSetOperators(ksp, GSM, GSM, DIFFERENT_NONZERO_PATTERN);
-#else
-    KSPSetOperators(ksp, GSM, GSM);
-#endif
-
-    // KSPCG
-    ierr = KSPSetType(ksp, KSPCG); CHKERRQ(ierr);
-    ierr = KSPGetPC(ksp, &prec); CHKERRQ(ierr);
-    ierr = PCSetType(prec, PCJACOBI); CHKERRQ(ierr);
-    ierr = KSPSetTolerances(ksp, TOLERANCE, PETSC_DEFAULT, PETSC_DEFAULT, MAXITER); CHKERRQ(ierr);
-
-    ierr = KSPSetInitialGuessNonzero(ksp, PETSC_FALSE); CHKERRQ(ierr);
-
-    ierr = KSPSetUp(ksp); CHKERRQ(ierr);
-
-    if (MPIrank == MASTER)
-        printf("%d: Starting solver...\n", MPIrank);
-
-    double startT = MPI_Wtime();
-
-    ierr = KSPSolve(ksp, rhs, sol); CHKERRQ(ierr);
-
-    double endT = MPI_Wtime();
-
-    if (MPIrank == MASTER)
-    {
-        printf("%d: Done solving!\n", MPIrank);
-        printf("%d: SOLVETIME = %.5le \n", MPIrank, endT - startT);
-    }
-
-    ierr = KSPGetSolution(ksp, &sol); CHKERRQ(ierr);
-
-    ierr = KSPGetIterationNumber(ksp, &iters); CHKERRQ(ierr);
-    ierr = KSPGetResidualNorm(ksp, &norm); CHKERRQ(ierr);
-
-
-    if (MPIrank == MASTER)
-        printf("%d: Converged to %f in %d iterations.\n", MPIrank, norm, iters);
-
-    if (MPIrank == MASTER)
-        printf("%d: About to print results\n", MPIrank);
-
-    PetscScalar tmpx, tmpy, tmpz;
-    PetscInt nlocal;
-    ierr = VecGetLocalSize(sol, &nlocal); CHKERRQ(ierr);
-
-    PetscInt vstart, vend;
-    ierr = VecGetOwnershipRange(sol, &vstart, &vend); CHKERRQ(ierr);
-
-    VecScatter vsctx;
-    ierr = VecScatterCreateToZero(sol, &vsctx, &vecout); CHKERRQ(ierr);
-    ierr = VecScatterBegin(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-
-    printf("%d: vstart=%d, vend=%d \n", MPIrank, vstart, vend);
-
-    if (MPIrank == MASTER) {
-        ierr = VecGetArray(vecout, &solution); CHKERRQ(ierr);
-
-        PetscInt vsize;
-        ierr = VecGetSize(vecout, &vsize); CHKERRQ(ierr);
-        printf("%d: vecout size = %d \n", MPIrank, vsize);
-
-        // update nodes with final displacements
-        NodeSet_it nitr = NodeS.begin();
-        Node<xyzType>* nodeptr;
-
-        for (nitr = NodeS.begin(); nitr != NodeS.end(); ++nitr) {
-            nodeptr = (*nitr);
-
-            xx = nodeptr->x;
-            yy = nodeptr->y;
-            zz = nodeptr->z;
-            ii = nodeptr->idx;
-            // update node displacements
-            nodeptr->dx = solution[ii * DOF_3D + 0];
-            nodeptr->dy = solution[ii * DOF_3D + 1];
-            nodeptr->dz = solution[ii * DOF_3D + 2];
-            printf("%llu %lf %lf %lf \n", ii, solution[ii * DOF_3D + 0], solution[ii * DOF_3D + 1], solution[ii * DOF_3D + 2]);
-        }// for each node in Node Set
-
-        ierr = VecRestoreArray(vecout, &solution); CHKERRQ(ierr);
-
-    }// if MASTER process
-
-
-    ierr = VecScatterDestroy(&vsctx); CHKERRQ(ierr);
-
-    delete[] forcevalue;
-    delete[] forcecolidx;
-
-    if (MPIrank == MASTER)
-        printf("%d: Leaving Solve\n", MPIrank);
-
-
-    SOLVE_DONE = true;
-
-    return 0;
-}
 
 
 //=========== Finish up

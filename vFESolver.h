@@ -156,7 +156,7 @@ public:
     
     // Solves the system, updating the node displacements
     // COLLECTIVE
-    PetscErrorCode Solve();
+    bool Solve();
     
     //================ Output
     
@@ -210,11 +210,11 @@ protected:
     std::vector<idxType> Idx_bias;
 	
     // global and local row/col sizes for GSM/RHS etc.
-    PetscInt       globalgsmrows, globalgsmcols, localgsmrows, localgsmcols, diagonalterms, offdiagonalterms, localrhslength, localsollength;
+    int       globalgsmrows, globalgsmcols, localgsmrows, localgsmcols, diagonalterms, offdiagonalterms, localrhslength, localsollength;
     
     // force vector : rhs
     PetscScalar    *forcevalue;
-    PetscInt       *forcecolidx;
+    int       *forcecolidx;
     idxType        forcecount = 0, totalrhs = 0;
     
     // Petsc KSP solver
@@ -231,25 +231,25 @@ protected:
     //================ Matrices
     
     // COLLECTIVE
-    PetscErrorCode ComputeGSM(Mat *gsm);
+    bool ComputeGSM(Mat *gsm);
     
     // COLLECTIVE
-    PetscErrorCode ComputeRHS(Vec *rhs);
+    bool ComputeRHS(Vec *rhs);
     
     //================ Allocate Local Rows / Columns (matrix / vec)
     
-    PetscErrorCode AllocateLocalMatrix(Mat *mat);
+    bool AllocateLocalMatrix(Mat *mat);
     
-    PetscErrorCode AllocateLocalVec(Vec *vec);
+    bool AllocateLocalVec(Vec *vec);
 
 
 
-    PetscErrorCode AllocateLocalVec2(Vec* vec);
+    bool AllocateLocalVec2(Vec* vec);
 
 	
     //================ Finish up
     
-    PetscErrorCode cleanup();
+    bool cleanup();
     
     //================ Micro methods (inline)
     

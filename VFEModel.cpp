@@ -9,7 +9,7 @@
 
 //========== CONSTRUCTOR / DESTRUCTOR
 
-VFEModel::VFEModel() : solver()
+VFEModel::VFEModel()
 {
 }
 
