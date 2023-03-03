@@ -133,8 +133,8 @@ void VFEModel::read_script_file(const char *filename)
 {
     auto startT = std::chrono::high_resolution_clock::now(); 
     
-    bool          OK(true);
-    FILE *        scriptFile;
+    bool            OK(true);
+    FILE*           scriptFile;
     
     // set default script/model file format
     SCRIPTVERSION = 2;
@@ -207,15 +207,17 @@ void VFEModel::read_script_file(const char *filename)
             if( solver.IsSetupDone() && !solver.SOLVE_DONE )
             {
                 printf("set up is done, about to solve \n");
-                command = CMD_SOLVE;
+                // command = CMD_SOLVE;
+                command = (itr->first);
                 // no data string for SOLVE;
                 
                 //output input file flag
                 output_input_flag();
-                while (((itr->first!=command)))
-                {
-                    itr++;
-                }
+                // while (((itr->first != command)))
+                // {
+                //     itr++;
+                // }
+                strcpy(data, (itr->second).c_str());
                 itr++;
             }
             else
