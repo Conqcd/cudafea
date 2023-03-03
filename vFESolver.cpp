@@ -1,6 +1,7 @@
 //  solver class
 
 #include "vFESolver.hpp"
+#include<chrono>
 
 //============ Constructor / Destructor
 
@@ -367,8 +368,8 @@ bool vFESolver::LoadConstraints(const char *filename){
     }// for line in lines
 
     //totalrhs = DOF_3D * (totlines - conscount);
-    forcevalue = new PetscScalar[totalrhs];
-    forcecolidx = new int[totalrhs];
+    forcevalue.resize(totalrhs);
+    forcecolidx.resize(totalrhs);
 
 	
     conscount = 0; // not important here
@@ -468,7 +469,7 @@ bool vFESolver::PrintDisplacements(const char *filename)
     idxType globalID;
     
     xyzType nx, ny, nz;
-    PetscScalar dx, dy, dz;
+    Scalar dx, dy, dz;
     FILE * outFile;
     NodeSet_it nitr;
     
@@ -791,17 +792,19 @@ bool vFESolver::AllocateLocalMatrix(Matrix& gsm)
 }
 
 // Allocate RHS rows according to number of processes
-bool vFESolver::AllocateLocalVec(Vec *vec)
+bool vFESolver::AllocateLocalVec(Vector& vec)
 {
     if(MPIsize == 1)
     {// IF SERIAL
-        VecSetSizes(*vec, globalgsmrows, globalgsmrows);
-        VecSetType(*vec, VECSEQ);
+        // VecSetSizes(*vec, globalgsmrows, globalgsmrows);
+        // VecSetType(*vec, VECSEQ);
+        vec.reset(globalgsmrows);
     }
     else
     {// IF PARALLEL
-        VecSetSizes(*vec, localgsmcols, globalgsmrows);
-        VecSetType(*vec, VECMPI);
+        // VecSetSizes(*vec, localgsmcols, globalgsmrows);
+        // VecSetType(*vec, VECMPI);
+        vec.reset(globalgsmrows);
     }
     return 0;
 }
@@ -810,7 +813,7 @@ bool vFESolver::AllocateLocalVec(Vec *vec)
 //=============== System matrices
 
 // Build Global Stiffness Matrix
-bool vFESolver::ComputeGSM(Mat *GSM)
+bool vFESolver::ComputeGSM(Matrix& GSM)
 {
     printf("In GSM\n");
     
@@ -819,7 +822,7 @@ bool vFESolver::ComputeGSM(Mat *GSM)
     
     printf("GSM ROWS [COLS] = %d \n", globalgsmrows);
     
-    MatInfo matinfo; // use to get matrix info
+    // MatInfo matinfo; // use to get matrix info
     
     // allocate GSM rows
     vFESolver::AllocateLocalMatrix(GSM);
@@ -827,7 +830,7 @@ bool vFESolver::ComputeGSM(Mat *GSM)
     
     // inclusive of first, exclusive of last
     int localfirst, locallast;
-    MatGetOwnershipRange(*GSM, &localfirst, &locallast);
+    // MatGetOwnershipRange(*GSM, &localfirst, &locallast);
     
     printf("GSM local owns : first row=%d, last row=%d \n", localfirst, locallast - 1);
     
@@ -838,9 +841,9 @@ bool vFESolver::ComputeGSM(Mat *GSM)
     int gsmCol[NUM_TERMS];
     int gsmRowX[1], gsmRowY[1], gsmRowZ[1];
     
-    PetscScalar gsmvalRowX[NUM_TERMS]; // row-centric storage etc.
-    PetscScalar gsmvalRowY[NUM_TERMS];
-    PetscScalar gsmvalRowZ[NUM_TERMS];
+    Scalar gsmvalRowX[NUM_TERMS]; // row-centric storage etc.
+    Scalar gsmvalRowY[NUM_TERMS];
+    Scalar gsmvalRowZ[NUM_TERMS];
     
     bool consnodeX(1); // is curnode constrained in X dim Default is 1 (true)
     bool consnodeY(1); // is curnode constrained in Y dim Default is 1 (true)
@@ -980,8 +983,11 @@ bool vFESolver::ComputeGSM(Mat *GSM)
             numcols = DOF_3D * gsmcolcount;
             
             MatSetValues(*GSM, 1, gsmRowX, numcols, gsmCol, gsmvalRowX, INSERT_VALUES);
-            MatSetValues(*GSM, 1, gsmRowY, numcols, gsmCol, gsmvalRowY, INSERT_VALUES);
-            MatSetValues(*GSM, 1, gsmRowZ, numcols, gsmCol, gsmvalRowZ, INSERT_VALUES);
+            // MatSetValues(*GSM, 1, gsmRowY, numcols, gsmCol, gsmvalRowY, INSERT_VALUES);
+            // MatSetValues(*GSM, 1, gsmRowZ, numcols, gsmCol, gsmvalRowZ, INSERT_VALUES);
+            GSM.insert(1,gsmRowX,numcols,gsmCol,gsmRowX);
+            GSM.insert(1,gsmRowY,numcols,gsmCol,gsmRowY);
+            GSM.insert(1,gsmRowZ,numcols,gsmCol,gsmRowZ);
             
             ++count;
             
@@ -993,26 +999,26 @@ bool vFESolver::ComputeGSM(Mat *GSM)
     //MatView(*GSM, PETSC_VIEWER_STDOUT_WORLD);
     
     // Get info about GSM allocation etc.
-    MatInfo info;
+    // MatInfo info;
     double  mal, nz_a, nz_u, nz_un;
     
-    MatGetInfo(*GSM, MAT_LOCAL, &info);
-    mal  = info.mallocs;
-    nz_a = info.nz_allocated;
-    nz_u = info.nz_used;
-    nz_un = info.nz_unneeded;
+    // MatGetInfo(*GSM, MAT_LOCAL, &info);
+    // mal  = info.mallocs;
+    // nz_a = info.nz_allocated;
+    // nz_u = info.nz_used;
+    // nz_un = info.nz_unneeded;
     
     printf("GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", mal, nz_a, nz_u, nz_un);
     printf("Leaving GSM\n");
     
-    return 0;
+    return true;
     
 }// computeGSM()
 
 
 
 // Build RHS force vector
-bool vFESolver::ComputeRHS(Vec *rhs){
+bool vFESolver::ComputeRHS(Vector& rhs){
     
     int xs,ys,zs,nx,ny,nz;
     int ii,jj,kk;
@@ -1020,22 +1026,21 @@ bool vFESolver::ComputeRHS(Vec *rhs){
     
     printf("In computeRHS\n");
     
-    VecCreate(comm, rhs);
     
     AllocateLocalVec(rhs);
     
     VecGetSize(*rhs, &size);
+    size = rhs.size();
     
     printf("VecGetSize : size = %d\n",size);
     
     VecSet(*rhs,0);
     VecSetValues(*rhs, totalrhs, forcecolidx, forcevalue, INSERT_VALUES);
-    VecAssemblyBegin(*rhs);
-    VecAssemblyEnd(*rhs);
+    rhs.insert();
     
     printf("Leaving RHS \n");
     
-    return 0;
+    return true;
     
 }// ComputeRHS()
 
@@ -1056,7 +1061,7 @@ bool vFESolver::Solve(){
     idxType  nodeidx;
     FILE * outFile;
     
-    PC prec;              // preconditioner
+    // PC prec;              // preconditioner
     Matrix GSM;              // GSM
     Vector sol;              // solution
     Vector rhs;              // rhs (force) vector
@@ -1065,72 +1070,73 @@ bool vFESolver::Solve(){
 
     printf("In solve \n");
     
-    KSPCreate(comm, &ksp);
+    // KSPCreate(comm, &ksp);
     
     printf("Created KSP \n");
     
-    vFESolver::ComputeGSM(&GSM);
-    vFESolver::ComputeRHS(&rhs);
+    vFESolver::ComputeGSM(GSM);
+    vFESolver::ComputeRHS(rhs);
     
-    VecCreate(comm, &sol);
+    // VecCreate(comm, &sol);
     
-    vFESolver::AllocateLocalVec(&sol);
+    vFESolver::AllocateLocalVec(sol);
     
 #if PETSC_VERSION_LT(3,5,1)
     KSPSetOperators(ksp, GSM, GSM, DIFFERENT_NONZERO_PATTERN);
 #else
-    KSPSetOperators(ksp, GSM, GSM);
+    // KSPSetOperators(ksp, GSM, GSM);
 #endif
     
     // KSPCG
-    KSPSetType(ksp,KSPCG);
-    KSPGetPC(ksp,&prec);
-    PCSetType(prec,PCJACOBI);
-    KSPSetTolerances(ksp, TOLERANCE, PETSC_DEFAULT, PETSC_DEFAULT, MAXITER);
+    // KSPSetType(ksp,KSPCG);
+    // KSPGetPC(ksp,&prec);
+    // PCSetType(prec,PCJACOBI);
+    // KSPSetTolerances(ksp, TOLERANCE, PETSC_DEFAULT, PETSC_DEFAULT, MAXITER);
 
-	KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+	// KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
     
-    KSPSetUp(ksp);
+    // KSPSetUp(ksp);
     
     printf("Starting solver...\n");
     
-    double startT = MPI_Wtime();
+    auto startT = std::chrono::high_resolution_clock::now();
     
-    ierr = KSPSolve(ksp, rhs, sol);
+    // KSPSolve(ksp, rhs, sol);
 
-    double endT = MPI_Wtime();
+    auto endT = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
     
     printf("Done solving!\n");
-    printf("SOLVETIME = %.5le \n", endT - startT);
+    printf("SOLVETIME = %.5le \n", static_cast<double>(duration.count()));
     
-    KSPGetSolution(ksp, &sol);
+    // KSPGetSolution(ksp, &sol);
     
-    KSPGetIterationNumber(ksp, &iters);
-    KSPGetResidualNorm(ksp, &norm);
+    // KSPGetIterationNumber(ksp, &iters);
+    // KSPGetResidualNorm(ksp, &norm);
     
     
     printf("Converged to %f in %d iterations.\n", norm, iters);
     
     printf("About to print results\n");
     
-    PetscScalar tmpx, tmpy, tmpz;
+    Scalar tmpx, tmpy, tmpz;
     int nlocal;
-    VecGetLocalSize(sol, &nlocal);
+    // VecGetLocalSize(sol, &nlocal);
     
     int vstart, vend;
-    VecGetOwnershipRange(sol, &vstart, &vend);
+    // VecGetOwnershipRange(sol, &vstart, &vend);
     
-    VecScatter vsctx;
-    VecScatterCreateToZero(sol, &vsctx, &vecout);
-    VecScatterBegin(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD);
-    VecScatterEnd(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD);
+    // VecScatter vsctx;
+    // VecScatterCreateToZero(sol, &vsctx, &vecout);
+    // VecScatterBegin(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD);
+    // VecScatterEnd(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD);
     
     printf("vstart=%d, vend=%d \n", vstart, vend);
 
-    ierr = VecGetArray(vecout, &solution);
+    // VecGetArray(vecout, &solution);
     
     int vsize;
-    VecGetSize(vecout, &vsize);
+    vsize = vecout.size();
     printf("vecout size = %d \n", vsize);
     
     // update nodes with final displacements
@@ -1151,37 +1157,35 @@ bool vFESolver::Solve(){
         //printf("%llu %lf %lf %lf \n",ii, solution[ii * DOF_3D + 0], solution[ii * DOF_3D + 1], solution[ii * DOF_3D + 2]);
     }// for each node in Node Set
     
-    VecRestoreArray(vecout, &solution);
+    // VecRestoreArray(vecout, &solution);
+    solution = vecout;
         
     
-    VecScatterDestroy(&vsctx);
+    // VecScatterDestroy(&vsctx);
     
-    delete[] forcevalue;
-    delete[] forcecolidx;
     
     printf("Leaving Solve\n");
     
-    
     SOLVE_DONE = true;
     
-    return 0;
+    return true;
     
 }// Solve()
 
 
 //=========== Finish up
 
-PetscErrorCode vFESolver::cleanup()
+bool vFESolver::cleanup()
 {
     
-    ierr = VecDestroy(&vecout); CHKERRQ(ierr);
+    // VecDestroy(&vecout);
+    vecout.destroy();
     
     // check if set
-    KSPDestroy(&ksp);
-    if (MPIrank == MASTER)
-        printf("%d: All done, bye, bye\n",MPIrank);
+    // KSPDestroy(&ksp);
+    printf("All done, bye, bye\n");
     
-    return 0;
+    return true;
 }// cleanup()
 
 

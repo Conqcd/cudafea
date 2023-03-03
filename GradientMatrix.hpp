@@ -12,15 +12,14 @@
 
 class GradientMatrix
 {
-    
 public:
     GradientMatrix();
     GradientMatrix(double a_size, double b_size, double c_size, int n_num);
     ~GradientMatrix();
     
     // get matrix and transpose
-    const Matrix& getmat(){ return matrix; }
-    const Matrix& getmat_t(){ return transpose; }
+    const Matrix& getmat() const{ return matrix; }
+    const Matrix& getmat_t() const{ return transpose; }
     double getJdet() const { return Jdet; }
 
 protected:

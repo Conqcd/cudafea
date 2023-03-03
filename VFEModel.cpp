@@ -3,9 +3,8 @@
 //
 //
 //
-
 #include "VFEModel.hpp"
-
+#include<chrono>
 
 //========== CONSTRUCTOR / DESTRUCTOR
 
@@ -130,7 +129,7 @@ void VFEModel::output_input_flag()
 
 void VFEModel::read_script_file(const char *filename)
 {
-    startT = MPI_Wtime(); 
+    auto startT = std::chrono::high_resolution_clock::now(); 
     
     bool          OK(true);
     FILE *        scriptFile;
@@ -140,7 +139,7 @@ void VFEModel::read_script_file(const char *filename)
     
     
     // SET SCRIPTFILE
-    strcpy(solver.SCRIPTFILE, filename);
+    strcpy_s(solver.SCRIPTFILE, filename);
     
     int command(0);
     int totalscript(0);
@@ -189,8 +188,6 @@ void VFEModel::read_script_file(const char *filename)
     }
     
     itr = InputM.begin();
-        
-    
     
     printf("script read, totalinput = %d \n",totalscript);
     
@@ -222,7 +219,7 @@ void VFEModel::read_script_file(const char *filename)
             else
             {
                 command = (itr->first);
-                strcpy( data, (itr->second).c_str());
+                strcpy(data, (itr->second).c_str());
                 
                 ++itr;
             }
@@ -244,10 +241,10 @@ void VFEModel::read_script_file(const char *filename)
         printf("all OK \n");
     }
     
-    endT = MPI_Wtime();
-    
+    auto endT =  std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
     output_end_flag(OK);
-    printf("total time = %le \n", endT - startT);
+    printf("total time = %le \n", static_cast<double>(duration.count()));
     
 }// read_script_file();
 

@@ -21,8 +21,14 @@ public:
     void add(idxType row,idxType col,double value);
     void scale(double s);
     void mult(const Matrix& m);
+    void mult(const Matrix& m1,const Matrix& m2);
+    void AXPY(double,const Matrix&);
     void destroy();
 
+    double operator[](unsigned int index)const
+    {
+        return 0;
+    }
 };
 
 namespace Math

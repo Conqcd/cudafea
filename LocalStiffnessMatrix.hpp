@@ -22,7 +22,7 @@ public:
     
     LocalStiffnessMatrix();
     LocalStiffnessMatrix(const double a, const double b, const double c, const double ym, const double pr);
-    LocalStiffnessMatrix(const double a, const double b, const double c, const double ym, const double pr, GradientMatrix * GradientMatrices);
+    LocalStiffnessMatrix(const double a, const double b, const double c, const double ym, const double pr, const std::vector<GradientMatrix>& GradientMatrices);
     ~LocalStiffnessMatrix();
     
     // inline
@@ -36,7 +36,7 @@ public:
     
 protected:
     
-    void create(const GradientMatrix& GradientMatrices);
+    void create(const std::vector<GradientMatrix>& GradientMatrices);
     void create();
     void destroy();
 };

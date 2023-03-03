@@ -40,6 +40,16 @@ void Matrix::mult(const Matrix& m)
 
 }
 
+void Matrix::mult(const Matrix& m1,const Matrix& m2)
+{
+
+}
+
+void Matrix::AXPY(double a,const Matrix& x)
+{
+
+}
+
 void Matrix::destroy()
 {
         

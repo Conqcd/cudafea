@@ -4,9 +4,14 @@
 class Vector
 {
 private:
-    idxType m_length;
     std::vector<double> m_Vec;
 public:
     Vector(idxType length);
+    Vector() = default;
     ~Vector();
+
+    idxType size()const {return m_Vec.size();};
+
+    void reset(idxType);
+    void destroy();
 };
