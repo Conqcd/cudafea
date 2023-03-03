@@ -3,7 +3,7 @@
 //
 //
 
-#include "IntegrationMatrix.h"
+#include "IntegrationMatrix.hpp"
 
 // not a petsc matrix !
 

@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include "Common.h"
+#include "Common.hpp"
 
 class IntegrationMatrix
 {

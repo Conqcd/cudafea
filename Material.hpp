@@ -9,8 +9,8 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include "Common.h"
-#include "LocalStiffnessMatrix.h"
+#include "Common.hpp"
+#include "LocalStiffnessMatrix.hpp"
 // #include "petscsys.h"
 
  class Material

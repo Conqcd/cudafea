@@ -5,7 +5,7 @@
 //  
 //
 
-#include "Constraint.h"
+#include "Constraint.hpp"
 
 
 template <typename T> Constraint<T>::Constraint() : cx(1), cy(1), cz(1), node(0), preserve(1) { }

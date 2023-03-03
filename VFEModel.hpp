@@ -5,7 +5,7 @@
 #ifndef VFEMODEL_H
 #define VFEMODEL_H
 
-#include "vFESolver.h"
+#include "vFESolver.hpp"
 
 class VFEModel{
 

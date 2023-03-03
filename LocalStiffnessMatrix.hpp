@@ -5,9 +5,9 @@
 #ifndef LOCALSTIFFNESSMATRIX_H
 #define LOCALSTIFFNESSMATRIX_H
 
-#include "Common.h"
-#include "GradientMatrix.h"
-#include "PropertyMatrix.h"
+#include "Common.hpp"
+#include "GradientMatrix.hpp"
+#include "PropertyMatrix.hpp"
 
 
 class LocalStiffnessMatrix
@@ -18,7 +18,7 @@ public:
     double a, b, c; // voxel sizes (x, y, z)
     
     
-    PetscScalar *matrix; // local stiffness matrix
+    Matrix matrix; // local stiffness matrix
     
     LocalStiffnessMatrix();
     LocalStiffnessMatrix(const double a, const double b, const double c, const double ym, const double pr);
@@ -27,14 +27,12 @@ public:
     
     // inline
     // get matrix
-    PetscScalar* getmat(){ return (matrix); }
+    const Matrix& getmat() const{ return matrix; }
     
     double getval(const unsigned int index)
     {
         return matrix[index];
     }
-    
-    
     
 protected:
     

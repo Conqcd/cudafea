@@ -5,7 +5,7 @@
 #ifndef CONSTRAINT_H
 #define CONSTRAINT_H
 
-#include "Common.h"
+#include "Common.hpp"
 
 template <typename T> class Node;
 

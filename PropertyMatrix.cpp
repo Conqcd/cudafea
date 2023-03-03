@@ -2,7 +2,7 @@
 //  PropertyMatrix.cpp
 //
 
-#include "PropertyMatrix.h"
+#include "PropertyMatrix.hpp"
 
 // use default values
 PropertyMatrix::PropertyMatrix() : youngsm(1), poissonsr(0.3)
@@ -20,34 +20,33 @@ PropertyMatrix::~PropertyMatrix()
     destroy();
 }
 
-PetscErrorCode PropertyMatrix::destroy()
+void PropertyMatrix::destroy()
 {
-    ierr = MatDestroy(&matrix); CHKERRQ(ierr);
-    return 0;
+    MatDestroy(&matrix);
 }
 
 // Build Property Matrix
 PetscErrorCode PropertyMatrix::create()
 {
-    ierr = MatCreateSeqDense(PETSC_COMM_SELF, 6, 6, PETSC_NULL, &matrix); CHKERRQ(ierr);
+    MatCreateSeqDense(PETSC_COMM_SELF, 6, 6, PETSC_NULL, &matrix);
     
-    ierr = MatSetValue(matrix, 0, 0, 1.0, INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 0, 1, poissonsr/(1.0-poissonsr), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 0, 2, poissonsr/(1.0-poissonsr), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 1, 0, poissonsr/(1.0-poissonsr), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 1, 1, 1.0, INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 1, 2, poissonsr/(1.0-poissonsr), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 2, 0, poissonsr/(1.0-poissonsr), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 2, 1, poissonsr/(1.0-poissonsr), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 2, 2, 1.0, INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 3, 3, (1.0-2.0*poissonsr)/(2.0*(1.0-poissonsr)), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 4, 4, (1.0-2.0*poissonsr)/(2.0*(1.0-poissonsr)), INSERT_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValue(matrix, 5, 5, (1.0-2.0*poissonsr)/(2.0*(1.0-poissonsr)), INSERT_VALUES); CHKERRQ(ierr);
+    MatSetValue(matrix, 0, 0, 1.0, INSERT_VALUES);
+    MatSetValue(matrix, 0, 1, poissonsr/(1.0-poissonsr), INSERT_VALUES);
+    MatSetValue(matrix, 0, 2, poissonsr/(1.0-poissonsr), INSERT_VALUES);
+    MatSetValue(matrix, 1, 0, poissonsr/(1.0-poissonsr), INSERT_VALUES);
+    MatSetValue(matrix, 1, 1, 1.0, INSERT_VALUES);
+    MatSetValue(matrix, 1, 2, poissonsr/(1.0-poissonsr), INSERT_VALUES);
+    MatSetValue(matrix, 2, 0, poissonsr/(1.0-poissonsr), INSERT_VALUES);
+    MatSetValue(matrix, 2, 1, poissonsr/(1.0-poissonsr), INSERT_VALUES);
+    MatSetValue(matrix, 2, 2, 1.0, INSERT_VALUES);
+    MatSetValue(matrix, 3, 3, (1.0-2.0*poissonsr)/(2.0*(1.0-poissonsr)), INSERT_VALUES);
+    MatSetValue(matrix, 4, 4, (1.0-2.0*poissonsr)/(2.0*(1.0-poissonsr)), INSERT_VALUES);
+    MatSetValue(matrix, 5, 5, (1.0-2.0*poissonsr)/(2.0*(1.0-poissonsr)), INSERT_VALUES);
     
-    ierr = MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY);
     
-    ierr = MatScale(matrix, youngsm*(1.0-poissonsr)/((1.0+poissonsr)*(1.0-2.0*poissonsr)));  CHKERRQ(ierr);
+    MatScale(matrix, youngsm*(1.0-poissonsr)/((1.0+poissonsr)*(1.0-2.0*poissonsr)));
 
     return 0;
 }

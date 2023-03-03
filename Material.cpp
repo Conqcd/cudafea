@@ -5,7 +5,7 @@
 //  
 //
 
-#include "Material.h"
+#include "Material.hpp"
 
 Material::Material() : idx(0), youngsm(0.0), poissonsr(-1.0), remodel(0) { }
 

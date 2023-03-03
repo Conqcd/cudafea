@@ -5,8 +5,9 @@
 #ifndef GRADIENTMATRIX_H
 #define GRADIENTMATRIX_H
 
-#include "Common.h"
-#include "IntegrationMatrix.h"
+#include "Common.hpp"
+#include "IntegrationMatrix.hpp"
+#include "Math/Matrix.hpp"
 
 
 class GradientMatrix
@@ -18,10 +19,9 @@ public:
     ~GradientMatrix();
     
     // get matrix and transpose
-    Mat* getmat(){ return (&matrix); }
-    Mat* getmat_t(){ return (&transpose); }
+    const Matrix& getmat(){ return matrix; }
+    const Matrix& getmat_t(){ return transpose; }
     double getJdet() const { return Jdet; }
-	
 
 protected:
     
@@ -31,8 +31,8 @@ protected:
     IntegrationMatrix integMtx;
     Diff_Ni_j diffMtx;
     double Jdet;
-    Mat matrix; // petsc matrix
-    Mat transpose; // transpose of pmatrix
+    Matrix matrix; // petsc matrix
+    Matrix transpose; // transpose of pmatrix
     
     
     void create();

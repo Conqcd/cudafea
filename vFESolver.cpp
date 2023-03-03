@@ -1,6 +1,6 @@
 //  solver class
 
-#include "vFESolver.h"
+#include "vFESolver.hpp"
 
 //============ Constructor / Destructor
 

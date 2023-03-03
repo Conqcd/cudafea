@@ -4,7 +4,7 @@
 //
 //
 
-#include "GradientMatrix.h"
+#include "GradientMatrix.hpp"
 
 GradientMatrix::GradientMatrix()
 {
@@ -72,7 +72,7 @@ void GradientMatrix::create()
     h = difxs * difyn - difys * difxn;
     l = difxs * difyt - difys * difxt;
 	
-    for (int i=0; i< NODES_PER_ELEMENT; i++)
+    for (int i = 0; i < NODES_PER_ELEMENT; i++)
     {// 8 integration points
 
         /*tempA = 1.0 / tempA * SIGN(integMtx(i, 0)) *

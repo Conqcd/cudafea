@@ -6,7 +6,7 @@
 //
 //
 
-#include "Node.h"
+#include "Node.hpp"
 
 template <typename T> Node<T>::Node() : constraint(0), dx(0), dy(0), dz(0)
 {

@@ -11,17 +11,16 @@
 #include <set>
 #include <map>
 #include <string>
-#include "Common.h"
-#include "Commands.h"
-#include "Constraint.h"
-#include "Node.h"
-#include "Element.h"
-#include "Material.h"
-#include "IntegrationMatrix.h"
-#include "PropertyMatrix.h"
-#include "GradientMatrix.h"
-#include "LocalStiffnessMatrix.h"
-// #include "petscversion.h"
+#include "Common.hpp"
+#include "Commands.hpp"
+#include "Constraint.hpp"
+#include "Node.hpp"
+#include "Element.hpp"
+#include "Material.hpp"
+#include "IntegrationMatrix.hpp"
+#include "PropertyMatrix.hpp"
+#include "GradientMatrix.hpp"
+#include "LocalStiffnessMatrix.hpp"
 
 template <class T, class P>
 struct compare {
@@ -205,7 +204,7 @@ protected:
     // Petsc error code
 
     GradientMatrix gradientMtx[SAMPLES_PER_ELEMENT];
-    
+ 
 
     std::vector<idxType> Idx_bias;
 	
@@ -216,10 +215,10 @@ protected:
     PetscScalar    *forcevalue;
     int       *forcecolidx;
     idxType        forcecount = 0, totalrhs = 0;
-    
+
     // Petsc KSP solver
-    KSP             ksp; // the solver context
-    
+    // KSP             ksp; // the solver context
+ 
     // vector solution etc.
     PetscScalar *solution; // solution data retrieved
     Vec vecout;
@@ -276,7 +275,7 @@ protected:
     bool GetNodeConsY(NodeSet_const_it cnitr)
     {
         if( (*cnitr)->constraint )
-            return (* ((*cnitr)->constraint) ).cx;
+            return (* ((*cnitr)->constraint) ).cy;
         else
             return true;
     }
@@ -284,7 +283,7 @@ protected:
     bool GetNodeConsZ(NodeSet_const_it cnitr)
     {
         if( (*cnitr)->constraint )
-            return (* ((*cnitr)->constraint) ).cx;
+            return (* ((*cnitr)->constraint) ).cz;
         else
             return true;
     }

@@ -6,7 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
-file(GLOB SOURCES ./*.cpp)
+file(GLOB SOURCES ./*.cpp ./Math/*.cpp)
+
+# message(${SOURCES}$)
 
 # set(MPI_PATH "C:/Program Files (x86)/Microsoft SDKs/MPI")
 # set(PETSC_DE_PATH "E:/petsc/petsc-3.15.0/arch-mswin-c-debug")
@@ -17,6 +19,8 @@ file(GLOB SOURCES ./*.cpp)
 # include_directories(${PETSC_DE_PATH}/include)
 # include_directories(${PETSC_PATH})
 
+# include_directories(${PROJECT_SOURCE_DIR}$/Math)
+include_directories(${PROJECT_SOURCE_DIR}$)
 # link_directories(${MPI_PATH}/Lib/x64)
 # link_directories(${PETSC_DE_PATH}/lib)
 # link_libraries(msmpi.lib
