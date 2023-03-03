@@ -230,20 +230,20 @@ protected:
     //================ Matrices
     
     // COLLECTIVE
-    bool ComputeGSM(Mat *gsm);
+    bool ComputeGSM(Matrix& gsm);
     
     // COLLECTIVE
-    bool ComputeRHS(Vec *rhs);
+    bool ComputeRHS(Vector& rhs);
     
     //================ Allocate Local Rows / Columns (matrix / vec)
     
-    bool AllocateLocalMatrix(Mat *mat);
+    bool AllocateLocalMatrix(Matrix& mat);
     
-    bool AllocateLocalVec(Vec *vec);
+    bool AllocateLocalVec(Vector& vec);
 
 
 
-    bool AllocateLocalVec2(Vec* vec);
+    bool AllocateLocalVec2(Vector& vec);
 
 	
     //================ Finish up
