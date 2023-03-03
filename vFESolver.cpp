@@ -983,9 +983,9 @@ bool vFESolver::ComputeGSM(Mat *GSM)
             
             numcols = DOF_3D * gsmcolcount;
             
-            ierr = MatSetValues(*GSM, 1, gsmRowX, numcols, gsmCol, gsmvalRowX, INSERT_VALUES); CHKERRQ(ierr);
-            ierr = MatSetValues(*GSM, 1, gsmRowY, numcols, gsmCol, gsmvalRowY, INSERT_VALUES); CHKERRQ(ierr);
-            ierr = MatSetValues(*GSM, 1, gsmRowZ, numcols, gsmCol, gsmvalRowZ, INSERT_VALUES); CHKERRQ(ierr);
+            MatSetValues(*GSM, 1, gsmRowX, numcols, gsmCol, gsmvalRowX, INSERT_VALUES);
+            MatSetValues(*GSM, 1, gsmRowY, numcols, gsmCol, gsmvalRowY, INSERT_VALUES);
+            MatSetValues(*GSM, 1, gsmRowZ, numcols, gsmCol, gsmvalRowZ, INSERT_VALUES);
             
             ++count;
             
@@ -993,8 +993,8 @@ bool vFESolver::ComputeGSM(Mat *GSM)
         
     }// for each node
 
-    ierr = MatAssemblyBegin(*GSM, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*GSM, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    MatAssemblyBegin(*GSM, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(*GSM, MAT_FINAL_ASSEMBLY);
     //MatView(*GSM, PETSC_VIEWER_DRAW_WORLD);
     //MatView(*GSM, PETSC_VIEWER_STDOUT_WORLD);
     
@@ -1002,15 +1002,14 @@ bool vFESolver::ComputeGSM(Mat *GSM)
     MatInfo info;
     double  mal, nz_a, nz_u, nz_un;
     
-    ierr = MatGetInfo(*GSM, MAT_LOCAL, &info); CHKERRQ(ierr);
+    MatGetInfo(*GSM, MAT_LOCAL, &info);
     mal  = info.mallocs;
     nz_a = info.nz_allocated;
     nz_u = info.nz_used;
     nz_un = info.nz_unneeded;
     
-    printf("%d: GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", MPIrank, mal, nz_a, nz_u, nz_un);
-    if(MPIrank == MASTER)
-        printf("%d: Leaving GSM\n",MPIrank);
+    printf("GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", mal, nz_a, nz_u, nz_un);
+    printf("Leaving GSM\n");
     
     return 0;
     
