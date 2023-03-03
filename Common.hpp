@@ -16,6 +16,7 @@ typedef unsigned int        xyzType;
 typedef unsigned int        midxType;
 // typedef uint64_t            idxType;
 typedef unsigned long long  idxType;
+typedef double Scalar;
 
 #include "Math/Matrix.hpp"
 #include "Math/Vector.hpp"

@@ -203,7 +203,7 @@ public:
 protected:
     // Petsc error code
 
-    GradientMatrix gradientMtx[SAMPLES_PER_ELEMENT];
+    std::vector<GradientMatrix> gradientMtx{SAMPLES_PER_ELEMENT};
  
 
     std::vector<idxType> Idx_bias;
@@ -212,15 +212,15 @@ protected:
     int       globalgsmrows, globalgsmcols, localgsmrows, localgsmcols, diagonalterms, offdiagonalterms, localrhslength, localsollength;
     
     // force vector : rhs
-    std::vector<ScaleTYPE>  forcevalue;
-    int       *forcecolidx;
+    std::vector<Scalar>    forcevalue;
+    std::vector<idxType>       forcecolidx;
     idxType        forcecount = 0, totalrhs = 0;
 
     // Petsc KSP solver
     // KSP             ksp; // the solver context
  
     // vector solution etc.
-    PetscScalar *solution; // solution data retrieved
+    std::vector<Scalar> solution; // solution data retrieved
     Vector vecout;
     
     //================ Build model
@@ -241,11 +241,6 @@ protected:
     
     bool AllocateLocalVec(Vector& vec);
 
-
-
-    bool AllocateLocalVec2(Vector& vec);
-
-	
     //================ Finish up
     
     bool cleanup();

@@ -3,9 +3,8 @@
 //
 //
 //
-
 #include "VFEModel.hpp"
-
+#include<chrono>
 
 //========== CONSTRUCTOR / DESTRUCTOR
 
@@ -48,6 +47,8 @@ void VFEModel::create_command_map()
     CommandM["SELECTION_OF_NODES"] = CMD_SELECTION_OF_NODES; // DOES NOTHING !!
     CommandM["LOAD_CONSTRAINTS"] = CMD_LOAD_CONSTRAINTS;
     CommandM["SELECT_NODE_FILE"] = CMD_LOAD_CONSTRAINTS;
+
+    CommandM["TRANSFER_TO_NASTRAN"] = CMD_TRANSFER_TO_NASTRAN;
     
     CommandM["SELECT_NODE_3D"] = CMD_SELECT_NODE_3D;
     CommandM["PRESERVE_NODE_3D"] = CMD_PRESERVE_NODE_3D;
@@ -130,7 +131,7 @@ void VFEModel::output_input_flag()
 
 void VFEModel::read_script_file(const char *filename)
 {
-    startT = MPI_Wtime(); 
+    auto startT = std::chrono::high_resolution_clock::now(); 
     
     bool          OK(true);
     FILE *        scriptFile;
@@ -170,7 +171,7 @@ void VFEModel::read_script_file(const char *filename)
             totalscript = InputM.size();
             itr = InputM.begin();
         }// try this
-        catch( std::exception &e )
+        catch(std::exception &e)
         {
             printf("ERROR: could not read script file \n");
             std::cerr << "exception caught: " << e.what() << std::endl;
@@ -189,8 +190,6 @@ void VFEModel::read_script_file(const char *filename)
     }
     
     itr = InputM.begin();
-        
-    
     
     printf("script read, totalinput = %d \n",totalscript);
     
@@ -199,7 +198,7 @@ void VFEModel::read_script_file(const char *filename)
     
     
     // execute commands
-    while( OK && (command != CMD_FINISH) )
+    while(OK && (command != CMD_FINISH))
     {// while OK and not finished
         
         // check if setup done, else read from script input
@@ -222,7 +221,7 @@ void VFEModel::read_script_file(const char *filename)
             else
             {
                 command = (itr->first);
-                strcpy( data, (itr->second).c_str());
+                strcpy(data, (itr->second).c_str());
                 
                 ++itr;
             }
@@ -234,7 +233,7 @@ void VFEModel::read_script_file(const char *filename)
         
     }// for each input line
     
-    if( !OK ) // if something went wrong with setup
+    if(!OK) // if something went wrong with setup
     {
         printf("ERROR: could not continue reading script, something went wrong \n");
         return;
@@ -244,10 +243,10 @@ void VFEModel::read_script_file(const char *filename)
         printf("all OK \n");
     }
     
-    endT = MPI_Wtime();
-    
+    auto endT =  std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
     output_end_flag(OK);
-    printf("total time = %le \n", endT - startT);
+    printf("total time = %le \n", static_cast<double>(duration.count()));
     
 }// read_script_file();
 
@@ -257,15 +256,15 @@ bool VFEModel::execute_command(int command)
 {
     //printf("%d: about to execute with command = %d \n", MPIrank, command);
     bool OK(false);
-    switch (command)
+    switch(command)
     {
         
         case CMD_SET_SCRIPT_VERSION : // SET SCRIPT VERSION --
         {
-            OK = ( sscanf( data, " %d \n", &SCRIPTVERSION ) == 1 );
+            OK = (sscanf(data, " %d \n", &SCRIPTVERSION) == 1);
             // if not 2, assume default, i.e. previous, formats (default = 1)
             // NOTE: any int that's not 2 indicates default
-            if( OK )
+            if(OK)
             {
                 solver.SCRIPTVERSION = SCRIPTVERSION ;
             }
@@ -274,10 +273,10 @@ bool VFEModel::execute_command(int command)
         case CMD_SET_VOXEL_SIZE : // SET VOXEL SIZE, SCALE FACTOR
         {
             double vsize[4]; // {a, b, c, sf};
-            OK = ( sscanf( data, " %lf %lf %lf %lf \n", &vsize[0], &vsize[1], &vsize[2], &vsize[3]) == 4 );
-            if (OK)
+            OK = (sscanf(data, " %lf %lf %lf %lf \n", &vsize[0], &vsize[1], &vsize[2], &vsize[3]) == 4);
+            if(OK)
             {
-                OK = solver.SetVoxelSize( vsize[0], vsize[1], vsize[2], vsize[3] );
+                OK = solver.SetVoxelSize(vsize[0], vsize[1], vsize[2], vsize[3]);
             }
             break;
         }
@@ -285,11 +284,11 @@ bool VFEModel::execute_command(int command)
         {
             char materialsfn[MAX_FILENAME_LENGTH];
             int materialsfnlen(0);
-            OK = ( sscanf( data, " %s \n", &materialsfn ) == 1 );
+            OK = (sscanf(data, " %s \n", &materialsfn) == 1);
             materialsfnlen = strlen(materialsfn) + 1;
             if (OK)
             {
-                OK = solver.LoadMaterials( materialsfn );
+                OK = solver.LoadMaterials(materialsfn);
             }
             break;
         }
@@ -299,7 +298,7 @@ bool VFEModel::execute_command(int command)
             xyzType totelems;
             char modelfn[MAX_FILENAME_LENGTH];
             int modelfnlen(0);
-            if( SCRIPTVERSION != 2 ) // default
+            if(SCRIPTVERSION != 2) // default
                 OK = (sscanf(data, " %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &modelfn) == 4);
             else
                 OK = (sscanf(data, " %d %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &totelems, &modelfn) == 5);
@@ -307,12 +306,12 @@ bool VFEModel::execute_command(int command)
             modelfnlen = strlen(modelfn) + 1;
             if (OK)
             {
-                OK = solver.SetVoxelDimensions( vdims[0], vdims[1], vdims[2]);
+                OK = solver.SetVoxelDimensions(vdims[0], vdims[1], vdims[2]);
                 if (OK)
                 {
                     if (SCRIPTVERSION == 2)
                     {
-                        OK = solver.SetTotElems( totelems );
+                        OK = solver.SetTotElems(totelems);
                     }
                 }
             }
@@ -340,7 +339,7 @@ bool VFEModel::execute_command(int command)
             OK = (sscanf(data, " %d \n", &themaxiter) == 1);
             if (OK)
             {
-                OK = solver.SetMaxIter( themaxiter );
+                OK = solver.SetMaxIter(themaxiter);
             }
             break;
         }
@@ -384,7 +383,7 @@ bool VFEModel::execute_command(int command)
             int constraintsfnlen(0);
             OK = (sscanf(data, " %s \n", &constraintsfn) == 1);
             constraintsfnlen = strlen(constraintsfn) + 1;
-            if (OK)
+            if(OK)
             {
                 OK = solver.LoadConstraints(constraintsfn);
             }
@@ -396,7 +395,7 @@ bool VFEModel::execute_command(int command)
             int Nastranfnlen(0);
             OK = (sscanf(data, " %s \n", &NastranFN) == 1);
             Nastranfnlen = strlen(NastranFN) + 1;
-            if (OK)
+            if(OK)
             {
                 OK = solver.toNASTRAN(NastranFN);
             }
@@ -422,24 +421,24 @@ bool VFEModel::execute_command(int command)
         
         case CMD_SOLVE : // SOLVE
         {
-            OK = (!solver.Solve()); // PetscErrorCode
+            OK = solver.Solve(); // PetscErrorCode
             break;
         }
             
         case CMD_PRINT_DISPLACEMENTS : // PRINT DISPLACEMENTS
         {
             // only MASTER process prints displacements (for now)
-            if (solver.SOLVE_DONE)
+            if(solver.SOLVE_DONE)
             {
                 char outputfn[MAX_FILENAME_LENGTH];
                 OK = (sscanf(data, " %s \n", &outputfn) == 1);
-                if (OK)
+                if(OK)
                     OK = solver.PrintDisplacements(outputfn);
             
             }// if solve done
             else
             {
-                printf( "%d: ERROR: cannot print displacements before solving! \n");
+                printf("ERROR: cannot print displacements before solving! \n");
                 OK = false;
             }
             
@@ -448,7 +447,7 @@ bool VFEModel::execute_command(int command)
 
         case CMD_FINISH : // FINISHED READING SCRIPT
         {
-            printf( "Finished reading script \n");
+            printf("Finished reading script \n");
             // cleanup here
             solver.FINISH_DONE = true;
             OK =  true;

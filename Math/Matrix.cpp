@@ -14,3 +14,62 @@ Matrix::Matrix(idxType row,idxType col)
 Matrix::~Matrix()
 {
 }
+
+void Matrix::reset(idxType row,idxType col)
+{
+
+}
+
+void Matrix::insert(idxType row,idxType col,double value)
+{
+
+}
+
+void Matrix::add(idxType row,idxType col,double value)
+{
+
+}
+
+void Matrix::scale(double s)
+{
+
+}
+
+void Matrix::mult(const Matrix& m)
+{
+
+}
+
+void Matrix::mult(const Matrix& m1,const Matrix& m2)
+{
+
+}
+
+void Matrix::AXPY(double a,const Matrix& x)
+{
+
+}
+
+void Matrix::destroy()
+{
+        
+}
+
+void Matrix::insertValues(const std::vector<idxType>& rowid,const std::vector<idxType>& colid,const std::vector<Scalar>& values)
+{
+
+}
+
+void Matrix::PreAllocation(idxType num)
+{
+
+}
+
+namespace Math
+{
+Matrix transpose(const Matrix& m)
+{
+    return {};
+}
+    
+} // namespace Math

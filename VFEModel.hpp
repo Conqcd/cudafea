@@ -27,7 +27,7 @@ public:
     typedef        MapIntString::iterator             InputM_it;
     
     // measure time
-    double startT, endT;
+    // double startT, endT;
     
     VFEModel();
     ~VFEModel();

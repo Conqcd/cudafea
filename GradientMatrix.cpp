@@ -23,8 +23,8 @@ GradientMatrix::~GradientMatrix()
 
 void GradientMatrix::destroy()
 {
-    MatDestroy(&matrix); 
-    MatDestroy(&transpose);
+    matrix.destroy();
+    transpose.destroy();
 }
 
 void GradientMatrix::create()
@@ -34,7 +34,7 @@ void GradientMatrix::create()
     double tempA = a, tempB = b, tempC = c;
     
     // now the gradient (or B) matrices
-    MatCreateSeqDense(PETSC_COMM_SELF, 6, 24, PETSC_NULL, &matrix);
+    matrix.reset(6,24);
 	
 	double x[8],y[8],z[8];
     double a, b, c, d, e, f, g, h, l;
@@ -72,7 +72,8 @@ void GradientMatrix::create()
     l = difxs * difyt - difys * difxt;
 	
     for (int i = 0; i < NODES_PER_ELEMENT; i++)
-    {// 8 integration points
+    {
+        // 8 integration points
 
         /*tempA = 1.0 / tempA * SIGN(integMtx(i, 0)) *
             (0.5 + integMtx(n, 1) * SIGN(integMtx(i, 1))) *
@@ -90,30 +91,39 @@ void GradientMatrix::create()
         temp = a * diffMtx(n, 0, i) - b * diffMtx(n, 1, i) + c * diffMtx(n, 2, i);
         temp = temp / Jdet;
         
-        MatSetValue(matrix, 0, 0 + 3 * i, temp, INSERT_VALUES);
-        MatSetValue(matrix, 3, 1 + 3 * i, temp, INSERT_VALUES);
-        MatSetValue(matrix, 5, 2 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 0, 0 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 3, 1 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 5, 2 + 3 * i, temp, INSERT_VALUES);
+        matrix.insert(0,0 + 3 * i,temp);
+        matrix.insert(3,1 + 3 * i,temp);
+        matrix.insert(5,2 + 3 * i,temp);
         
         temp = -d * diffMtx(n, 0, i) + e * diffMtx(n, 1, i) - f * diffMtx(n, 2, i);
         temp = temp / Jdet;
         
         
-        MatSetValue(matrix, 1, 1 + 3 * i, temp, INSERT_VALUES);
-        MatSetValue(matrix, 3, 0 + 3 * i, temp, INSERT_VALUES);
-        MatSetValue(matrix, 4, 2 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 1, 1 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 3, 0 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 4, 2 + 3 * i, temp, INSERT_VALUES);
         
+        matrix.insert(1,1 + 3 * i,temp);
+        matrix.insert(3,0 + 3 * i,temp);
+        matrix.insert(4,2 + 3 * i,temp);
+
         temp = g * diffMtx(n, 0, i) - h * diffMtx(n, 1, i) + l * diffMtx(n, 2, i);
         temp = temp / Jdet;
         
         
-        MatSetValue(matrix, 2, 2 + 3 * i, temp, INSERT_VALUES);
-        MatSetValue(matrix, 4, 1 + 3 * i, temp, INSERT_VALUES);
-        MatSetValue(matrix, 5, 0 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 2, 2 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 4, 1 + 3 * i, temp, INSERT_VALUES);
+        // MatSetValue(matrix, 5, 0 + 3 * i, temp, INSERT_VALUES); 
+
+        matrix.insert(2,2 + 3 * i,temp);
+        matrix.insert(4,1 + 3 * i,temp);
+        matrix.insert(5,0 + 3 * i,temp);
     }
 	
-    MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY);
 
     // create transpose
-    MatTranspose(matrix, MAT_INITIAL_MATRIX, &transpose);
+    transpose = Math::transpose(matrix);
 }
