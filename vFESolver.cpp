@@ -73,7 +73,7 @@ bool vFESolver::SetVoxelSize(const double a, const double b, const double c, con
 bool vFESolver::SetVoxelDimensions(const xyzType dimx, const xyzType dimy, const xyzType dimz)
 {
     bool OK(false);
-    if( dimx * dimy * dimz )
+    if(dimx * dimy * dimz)
     {
         DX = dimx;
         DY = dimy;
@@ -129,15 +129,15 @@ bool vFESolver::SetTolerance(const double thetolerance)
 {
     bool OK(false);
     TOLERANCE = thetolerance;
-    return ( OK = true );
+    return (OK = true);
 }// SetTolerance()
 
 bool vFESolver::SetAlgorithmFEA(const char *thesolvertype, const char *thepctype)
 {
-    bool OK( false );
-    strcpy( SOLVERTYPE, thesolvertype );
-    strcpy( PCTYPE, thepctype );
-    return ( OK = true );
+    bool OK(false);
+    strcpy(SOLVERTYPE, thesolvertype);
+    strcpy(PCTYPE, thepctype);
+    return (OK = true);
 }
 
 //================ Loaders
@@ -832,10 +832,10 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     
     
     // inclusive of first, exclusive of last
-    int localfirst, locallast;
+    int localfirst = 0, locallast = 0;
     // MatGetOwnershipRange(*GSM, &localfirst, &locallast);
     
-    printf("GSM local owns : first row=%d, last row=%d \n", localfirst, locallast - 1);
+    printf("GSM local owns : first row = %d, last row = %d \n", localfirst, locallast - 1);
     
     idxType gsmcolcount(0);
     std::map<idxType, idxType> tmp_gsmcolidx;
@@ -1003,7 +1003,7 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     
     // Get info about GSM allocation etc.
     // MatInfo info;
-    double  mal, nz_a, nz_u, nz_un;
+    double  mal = 0, nz_a = 0, nz_u = 0, nz_un = 0;
     
     // MatGetInfo(*GSM, MAT_LOCAL, &info);
     // mal  = info.mallocs;
@@ -1069,8 +1069,8 @@ bool vFESolver::Solve(){
     Matrix GSM;              // GSM
     Vector sol;              // solution
     Vector rhs;              // rhs (force) vector
-    int iters;       // number of iterations
-    float norm;       // norm
+    int iters = 0;       // number of iterations
+    float norm = 0;       // norm
 
     printf("In solve \n");
     
@@ -1127,17 +1127,20 @@ bool vFESolver::Solve(){
     int nlocal;
     // VecGetLocalSize(sol, &nlocal);
     
-    int vstart, vend;
+    
+    int vstart = 0, vend = 0;
     // VecGetOwnershipRange(sol, &vstart, &vend);
     
     // VecScatter vsctx;
     // VecScatterCreateToZero(sol, &vsctx, &vecout);
     // VecScatterBegin(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD);
     // VecScatterEnd(vsctx, sol, vecout, INSERT_VALUES, SCATTER_FORWARD);
-    
-    printf("vstart=%d, vend=%d \n", vstart, vend);
+     
+    printf("vstart = %d, vend = %d \n", vstart, vend);
 
     // VecGetArray(vecout, &solution);
+    vecout.reset(sol.size());
+    solution = vecout.generateScalar();
     
     int vsize;
     vsize = vecout.size();
@@ -1174,7 +1177,6 @@ bool vFESolver::Solve(){
     SOLVE_DONE = true;
     
     return true;
-    
 }// Solve()
 
 

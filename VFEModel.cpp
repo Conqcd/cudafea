@@ -141,7 +141,7 @@ void VFEModel::read_script_file(const char *filename)
     
     
     // SET SCRIPTFILE
-    std::strcpy(solver.SCRIPTFILE, filename);
+    strcpy(solver.SCRIPTFILE, filename);
     
     int command(0);
     int totalscript(0);
@@ -171,7 +171,7 @@ void VFEModel::read_script_file(const char *filename)
             totalscript = InputM.size();
             itr = InputM.begin();
         }// try this
-        catch( std::exception &e )
+        catch(std::exception &e)
         {
             printf("ERROR: could not read script file \n");
             std::cerr << "exception caught: " << e.what() << std::endl;
@@ -198,7 +198,7 @@ void VFEModel::read_script_file(const char *filename)
     
     
     // execute commands
-    while( OK && (command != CMD_FINISH) )
+    while(OK && (command != CMD_FINISH))
     {// while OK and not finished
         
         // check if setup done, else read from script input
@@ -233,7 +233,7 @@ void VFEModel::read_script_file(const char *filename)
         
     }// for each input line
     
-    if( !OK ) // if something went wrong with setup
+    if(!OK) // if something went wrong with setup
     {
         printf("ERROR: could not continue reading script, something went wrong \n");
         return;
@@ -256,15 +256,15 @@ bool VFEModel::execute_command(int command)
 {
     //printf("%d: about to execute with command = %d \n", MPIrank, command);
     bool OK(false);
-    switch (command)
+    switch(command)
     {
         
         case CMD_SET_SCRIPT_VERSION : // SET SCRIPT VERSION --
         {
-            OK = ( sscanf( data, " %d \n", &SCRIPTVERSION ) == 1 );
+            OK = (sscanf(data, " %d \n", &SCRIPTVERSION) == 1);
             // if not 2, assume default, i.e. previous, formats (default = 1)
             // NOTE: any int that's not 2 indicates default
-            if( OK )
+            if(OK)
             {
                 solver.SCRIPTVERSION = SCRIPTVERSION ;
             }
@@ -274,7 +274,7 @@ bool VFEModel::execute_command(int command)
         {
             double vsize[4]; // {a, b, c, sf};
             OK = (sscanf(data, " %lf %lf %lf %lf \n", &vsize[0], &vsize[1], &vsize[2], &vsize[3]) == 4);
-            if (OK)
+            if(OK)
             {
                 OK = solver.SetVoxelSize(vsize[0], vsize[1], vsize[2], vsize[3]);
             }
@@ -421,7 +421,7 @@ bool VFEModel::execute_command(int command)
         
         case CMD_SOLVE : // SOLVE
         {
-            OK = (!solver.Solve()); // PetscErrorCode
+            OK = solver.Solve(); // PetscErrorCode
             break;
         }
             

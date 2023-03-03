@@ -9,6 +9,11 @@ Vector::~Vector()
 {
 }
 
+void Vector::reset(idxType length)
+{
+    m_Vec.resize(length);
+}
+
 void Vector::destroy()
 {
 
@@ -26,5 +31,5 @@ void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scala
 
 std::vector<Scalar> Vector::generateScalar()
 {
-    return {};
+    return m_Vec;
 }
