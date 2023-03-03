@@ -45,13 +45,12 @@ void LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
 {
         matrix = new PetscScalar();
         
-        Matrix LSM, propXgradMtx, tempMtx;
         int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
+        Matrix LSM(lsmlen,lsmlen), propXgradMtx, tempMtx;
         
         // Build Property Matrix
         PropertyMatrix propMtx(youngsm, poissonsr);
         
-        MatCreateSeqDense(PETSC_COMM_SELF, lsmlen, lsmlen, PETSC_NULL, &LSM);
         
         // assuming all 8 gradient matrices are available
         for (int n = 0; n < SAMPLES_PER_ELEMENT; ++n)
