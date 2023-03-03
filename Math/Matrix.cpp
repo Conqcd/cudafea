@@ -14,3 +14,42 @@ Matrix::Matrix(idxType row,idxType col)
 Matrix::~Matrix()
 {
 }
+
+void Matrix::reset(idxType row,idxType col)
+{
+
+}
+
+void Matrix::insert(idxType row,idxType col,double value)
+{
+
+}
+
+void Matrix::add(idxType row,idxType col,double value)
+{
+
+}
+
+void Matrix::scale(double s)
+{
+
+}
+
+void Matrix::mult(const Matrix& m)
+{
+
+}
+
+void Matrix::destroy()
+{
+        
+}
+
+namespace Math
+{
+Matrix transpose(const Matrix& m)
+{
+    return {};
+}
+    
+} // namespace Math
