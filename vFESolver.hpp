@@ -51,10 +51,10 @@ public:
     
     //======================== MAPS / ITERATORS ======================
     
-    typedef        std::set< Element< xyzType > * , compare< Element< xyzType >, xyzType > > ElementSet; // set of elements
-    typedef        std::set< Node< xyzType > * , compare< Node< xyzType >, xyzType > > NodeSet;    // set of nodes
-    typedef        std::map< midxType, Material >  MaterialMap;   // map of materials
-    typedef        std::vector<std::string>        VecString;     // vector of strings
+    typedef        std::set<Element<xyzType>*,compare<Element<xyzType>,xyzType>>    ElementSet; // set of elements
+    typedef        std::set<Node<xyzType>*,compare<Node<xyzType>,xyzType>>          NodeSet;    // set of nodes
+    typedef        std::map<midxType,Material>      MaterialMap;   // map of materials
+    typedef        std::vector<std::string>         VecString;     // vector of strings
 
     
     // specific sets/maps
