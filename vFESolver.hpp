@@ -212,7 +212,7 @@ protected:
     int       globalgsmrows, globalgsmcols, localgsmrows, localgsmcols, diagonalterms, offdiagonalterms, localrhslength, localsollength;
     
     // force vector : rhs
-    PetscScalar    *forcevalue;
+    std::vector<ScaleTYPE>  forcevalue;
     int       *forcecolidx;
     idxType        forcecount = 0, totalrhs = 0;
 
