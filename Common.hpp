@@ -1,10 +1,7 @@
 //
 //  Common.h
 //  
-
-
-#ifndef COMMON_H
-#define COMMON_H
+#pragma once
 
  
 #define SIGN(x) ((x > 0) - (x < 0))
@@ -17,7 +14,8 @@
 
 typedef unsigned int        xyzType;
 typedef unsigned int        midxType;
-typedef uint64_t            idxType;
+// typedef uint64_t            idxType;
+typedef unsigned long long  idxType;
 
-#endif /*  defined COMMON_H */
-
+#include "Math/Matrix.hpp"
+#include "Math/Vector.hpp"

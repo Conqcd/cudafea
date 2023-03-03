@@ -25,7 +25,6 @@ void GradientMatrix::destroy()
 {
     MatDestroy(&matrix); 
     MatDestroy(&transpose);
-    return 0;
 }
 
 void GradientMatrix::create()
@@ -117,6 +116,4 @@ void GradientMatrix::create()
 
     // create transpose
     MatTranspose(matrix, MAT_INITIAL_MATRIX, &transpose);
-
-    return 0;
 }

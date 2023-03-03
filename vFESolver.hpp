@@ -221,7 +221,7 @@ protected:
  
     // vector solution etc.
     PetscScalar *solution; // solution data retrieved
-    Vec vecout;
+    Vector vecout;
     
     //================ Build model
     

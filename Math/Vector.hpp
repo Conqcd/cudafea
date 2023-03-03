@@ -1,10 +1,12 @@
 #pragma once
-
+#include "../Common.hpp"
+#include<vector>
 class Vector
 {
 private:
-    /* data */
+    idxType m_length;
+    std::vector<double> m_Vec;
 public:
-    Vector(/* args */);
+    Vector(idxType length);
     ~Vector();
 };

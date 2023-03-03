@@ -1,11 +1,4 @@
-//
-//  PropertyMatrix.h
-//  
-//
-//
-
-#ifndef PROPERTYMATRIX_H
-#define PROPERTYMATRIX_H
+#pragma once
 
 #include "Common.hpp"
 #include "Math/Matrix.hpp"
@@ -31,7 +24,3 @@ protected:
     void create();
     void destroy();
 };
-
-
-
-#endif /* PROPERTYMATRIX_H */
