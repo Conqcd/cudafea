@@ -62,9 +62,6 @@ void LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
             
             MatAXPY(LSM, gradientMtx[n].getJdet(), tempMtx, DIFFERENT_NONZERO_PATTERN);
             
-            MatDestroy(&propXgradMtx);
-            MatDestroy(&tempMtx);
-            
         }// per integration point i, gradient matrix
 
         //ierr = MatScale(LSM, 0.125 * a * b * c); CHKERRQ(ierr);
@@ -72,6 +69,4 @@ void LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
         //MatView(LSM, PETSC_VIEWER_STDOUT_WORLD);
         // Get LSM
         MatDenseGetArray(LSM, (&matrix));
-
-        return 0;
 }
