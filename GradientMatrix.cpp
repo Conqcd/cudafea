@@ -34,7 +34,7 @@ void GradientMatrix::create()
     double tempA = a, tempB = b, tempC = c;
     
     // now the gradient (or B) matrices
-    matrix.reset(6,6);
+    matrix.reset(6,24);
 	
 	double x[8],y[8],z[8];
     double a, b, c, d, e, f, g, h, l;
