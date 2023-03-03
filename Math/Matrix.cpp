@@ -55,6 +55,16 @@ void Matrix::destroy()
         
 }
 
+void Matrix::insertValues(const std::vector<idxType>& rowid,const std::vector<idxType>& colid,const std::vector<Scalar>& values)
+{
+
+}
+
+void Matrix::PreAllocation(idxType num)
+{
+
+}
+
 namespace Math
 {
 Matrix transpose(const Matrix& m)

@@ -213,7 +213,7 @@ protected:
     
     // force vector : rhs
     std::vector<Scalar>    forcevalue;
-    std::vector<int>       forcecolidx;
+    std::vector<idxType>       forcecolidx;
     idxType        forcecount = 0, totalrhs = 0;
 
     // Petsc KSP solver

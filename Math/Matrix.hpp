@@ -24,7 +24,12 @@ public:
     void mult(const Matrix& m1,const Matrix& m2);
     void AXPY(double,const Matrix&);
     void destroy();
+    void insertValues(const std::vector<idxType>&,const std::vector<idxType>&,const std::vector<Scalar>&);
+    void PreAllocation(idxType);
 
+
+    idxType get_row()const {return m_row;}
+    idxType get_col()const {return m_col;}
     double operator[](unsigned int index)const
     {
         return 0;

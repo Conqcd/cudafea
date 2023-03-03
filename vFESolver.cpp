@@ -757,16 +757,16 @@ bool vFESolver::AllocateLocalMatrix(Matrix& gsm)
     // IF PARALLEL
     double gr(globalgsmrows);
     double gc(globalgsmcols);
-    localgsmrows = floor(gr / MPIsize);
-    localgsmcols = floor(gc / MPIsize);
+    // localgsmrows = floor(gr / MPIsize);
+    // localgsmcols = floor(gc / MPIsize);
     
     // if you are the top ranking process
     // take remaining rows/columns
-    if (MPIrank == MPIsize - 1)
-    {
-        localgsmrows = gr - (MPIsize - 1) * floor(gr / MPIsize);
-        localgsmcols = gc - (MPIsize - 1) * floor(gc / MPIsize);
-    }
+    // if (MPIrank == MPIsize - 1)
+    // {
+    //     localgsmrows = gr - (MPIsize - 1) * floor(gr / MPIsize);
+    //     localgsmcols = gc - (MPIsize - 1) * floor(gc / MPIsize);
+    // }
     
     diagonalterms = NUM_TERMS;
     offdiagonalterms = NUM_TERMS;
@@ -776,15 +776,18 @@ bool vFESolver::AllocateLocalMatrix(Matrix& gsm)
     
     printf("GSM Alloc: lrows=%d, lcols=%d \n", localgsmrows, localgsmrows);
 
-    MatCreate(comm, gsm);
-    MatSetSizes(*gsm, localgsmrows, localgsmcols, globalgsmrows, globalgsmcols);
-    MatSetType(*gsm, MATMPIAIJ);
-    MatMPIAIJSetPreallocation(*gsm, diagonalterms, PETSC_NULL, offdiagonalterms, PETSC_NULL);
+    // MatSetSizes(*gsm, localgsmrows, localgsmcols, globalgsmrows, globalgsmcols);
+    gsm.reset(globalgsmrows,globalgsmcols);
+    // MatSetType(*gsm, MATMPIAIJ);
+    // MatMPIAIJSetPreallocation(*gsm, diagonalterms, PETSC_NULL, offdiagonalterms, PETSC_NULL);
+    gsm.PreAllocation(diagonalterms);
         
     
     // check rows
     int grows, gcols;
-    MatGetSize(*gsm, &grows, &gcols);
+    
+    grows = gsm.get_row();
+    gcols = gsm.get_col();
     
     printf("MatGetSize of GSM : rows=%d, cols=%d\n",grows, gcols);
     
@@ -794,13 +797,13 @@ bool vFESolver::AllocateLocalMatrix(Matrix& gsm)
 // Allocate RHS rows according to number of processes
 bool vFESolver::AllocateLocalVec(Vector& vec)
 {
-    if(MPIsize == 1)
+    // if(MPIsize == 1)
     {// IF SERIAL
         // VecSetSizes(*vec, globalgsmrows, globalgsmrows);
         // VecSetType(*vec, VECSEQ);
-        vec.reset(globalgsmrows);
+        // vec.reset(globalgsmrows);
     }
-    else
+    // else
     {// IF PARALLEL
         // VecSetSizes(*vec, localgsmcols, globalgsmrows);
         // VecSetType(*vec, VECMPI);
@@ -817,8 +820,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
 {
     printf("In GSM\n");
     
-    globalgsmrows =  NodeS.size()*DOF_3D;
-    globalgsmcols =  NodeS.size()*DOF_3D; // NUM_TERMS = max number of non-zero elements per row
+    globalgsmrows =  NodeS.size() * DOF_3D;
+    globalgsmcols =  NodeS.size() * DOF_3D; // NUM_TERMS = max number of non-zero elements per row
     
     printf("GSM ROWS [COLS] = %d \n", globalgsmrows);
     
@@ -838,12 +841,12 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     std::map<idxType, idxType> tmp_gsmcolidx;
     idxType currentcol(0);
     int numcols(0);
-    int gsmCol[NUM_TERMS];
-    int gsmRowX[1], gsmRowY[1], gsmRowZ[1];
+    std::vector<idxType> gsmCol(NUM_TERMS);
+    std::vector<idxType> gsmRowX(1), gsmRowY(1), gsmRowZ(1);
     
-    Scalar gsmvalRowX[NUM_TERMS]; // row-centric storage etc.
-    Scalar gsmvalRowY[NUM_TERMS];
-    Scalar gsmvalRowZ[NUM_TERMS];
+    std::vector<Scalar> gsmvalRowX(NUM_TERMS); // row-centric storage etc.
+    std::vector<Scalar> gsmvalRowY(NUM_TERMS);
+    std::vector<Scalar> gsmvalRowZ(NUM_TERMS);
     
     bool consnodeX(1); // is curnode constrained in X dim Default is 1 (true)
     bool consnodeY(1); // is curnode constrained in Y dim Default is 1 (true)
@@ -892,9 +895,9 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
                 gsmvalRowZ[c]=0;
             }
             
-            gsmRowX[0] = renumNode*DOF_3D  + 0;
-            gsmRowY[0] = renumNode*DOF_3D  + 1;
-            gsmRowZ[0] = renumNode*DOF_3D  + 2;
+            gsmRowX[0] = renumNode * DOF_3D  + 0;
+            gsmRowY[0] = renumNode * DOF_3D  + 1;
+            gsmRowZ[0] = renumNode * DOF_3D  + 2;
             
             Constraint<xyzType>* nodecons = vFESolver::GetNodeCons(cnitr);
             if(nodecons){
@@ -961,8 +964,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
                         }// if diagonal element of GSM
                         
                         for (c = 0; c < 3; ++c){// for each x,y,z component/column
-                            colindex = currentcol*DOF_3D + c;
-                            gsmCol[colindex] = renumNodeNeighbour*DOF_3D + c;
+                            colindex = currentcol * DOF_3D + c;
+                            gsmCol[colindex] = renumNodeNeighbour * DOF_3D + c;
                             
                             int xrowidx = (nodeL * DOF_3D + 0) * lsmlen + nodeNeighbourL * DOF_3D + c;
                             int yrowidx = (nodeL * DOF_3D + 1) * lsmlen + nodeNeighbourL * DOF_3D + c;
@@ -982,12 +985,12 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
             
             numcols = DOF_3D * gsmcolcount;
             
-            MatSetValues(*GSM, 1, gsmRowX, numcols, gsmCol, gsmvalRowX, INSERT_VALUES);
+            // MatSetValues(*GSM, 1, gsmRowX, numcols, gsmCol, gsmvalRowX, INSERT_VALUES);
             // MatSetValues(*GSM, 1, gsmRowY, numcols, gsmCol, gsmvalRowY, INSERT_VALUES);
             // MatSetValues(*GSM, 1, gsmRowZ, numcols, gsmCol, gsmvalRowZ, INSERT_VALUES);
-            GSM.insert(1,gsmRowX,numcols,gsmCol,gsmRowX);
-            GSM.insert(1,gsmRowY,numcols,gsmCol,gsmRowY);
-            GSM.insert(1,gsmRowZ,numcols,gsmCol,gsmRowZ);
+            GSM.insertValues(gsmRowX,gsmCol,gsmvalRowX);
+            GSM.insertValues(gsmRowY,gsmCol,gsmvalRowY);
+            GSM.insertValues(gsmRowZ,gsmCol,gsmvalRowZ);
             
             ++count;
             
@@ -1029,14 +1032,15 @@ bool vFESolver::ComputeRHS(Vector& rhs){
     
     AllocateLocalVec(rhs);
     
-    VecGetSize(*rhs, &size);
+    // VecGetSize(*rhs, &size);
     size = rhs.size();
     
     printf("VecGetSize : size = %d\n",size);
     
-    VecSet(*rhs,0);
-    VecSetValues(*rhs, totalrhs, forcecolidx, forcevalue, INSERT_VALUES);
-    rhs.insert();
+    // VecSet(*rhs,0);
+    rhs.fill(0);
+    // VecSetValues(*rhs, totalrhs, forcecolidx, forcevalue, INSERT_VALUES);
+    rhs.setvalues(forcecolidx, forcevalue);
     
     printf("Leaving RHS \n");
     
@@ -1081,11 +1085,11 @@ bool vFESolver::Solve(){
     
     vFESolver::AllocateLocalVec(sol);
     
-#if PETSC_VERSION_LT(3,5,1)
-    KSPSetOperators(ksp, GSM, GSM, DIFFERENT_NONZERO_PATTERN);
-#else
+// #if PETSC_VERSION_LT(3,5,1)
+    // KSPSetOperators(ksp, GSM, GSM, DIFFERENT_NONZERO_PATTERN);
+// #else
     // KSPSetOperators(ksp, GSM, GSM);
-#endif
+// #endif
     
     // KSPCG
     // KSPSetType(ksp,KSPCG);
@@ -1158,7 +1162,8 @@ bool vFESolver::Solve(){
     }// for each node in Node Set
     
     // VecRestoreArray(vecout, &solution);
-    solution = vecout;
+    solution = vecout.generateScalar();
+    
         
     
     // VecScatterDestroy(&vsctx);

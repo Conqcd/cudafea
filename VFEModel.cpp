@@ -47,6 +47,8 @@ void VFEModel::create_command_map()
     CommandM["SELECTION_OF_NODES"] = CMD_SELECTION_OF_NODES; // DOES NOTHING !!
     CommandM["LOAD_CONSTRAINTS"] = CMD_LOAD_CONSTRAINTS;
     CommandM["SELECT_NODE_FILE"] = CMD_LOAD_CONSTRAINTS;
+
+    CommandM["TRANSFER_TO_NASTRAN"] = CMD_TRANSFER_TO_NASTRAN;
     
     CommandM["SELECT_NODE_3D"] = CMD_SELECT_NODE_3D;
     CommandM["PRESERVE_NODE_3D"] = CMD_PRESERVE_NODE_3D;
@@ -139,7 +141,7 @@ void VFEModel::read_script_file(const char *filename)
     
     
     // SET SCRIPTFILE
-    strcpy_s(solver.SCRIPTFILE, filename);
+    std::strcpy(solver.SCRIPTFILE, filename);
     
     int command(0);
     int totalscript(0);
@@ -271,10 +273,10 @@ bool VFEModel::execute_command(int command)
         case CMD_SET_VOXEL_SIZE : // SET VOXEL SIZE, SCALE FACTOR
         {
             double vsize[4]; // {a, b, c, sf};
-            OK = ( sscanf( data, " %lf %lf %lf %lf \n", &vsize[0], &vsize[1], &vsize[2], &vsize[3]) == 4 );
+            OK = (sscanf(data, " %lf %lf %lf %lf \n", &vsize[0], &vsize[1], &vsize[2], &vsize[3]) == 4);
             if (OK)
             {
-                OK = solver.SetVoxelSize( vsize[0], vsize[1], vsize[2], vsize[3] );
+                OK = solver.SetVoxelSize(vsize[0], vsize[1], vsize[2], vsize[3]);
             }
             break;
         }
@@ -282,11 +284,11 @@ bool VFEModel::execute_command(int command)
         {
             char materialsfn[MAX_FILENAME_LENGTH];
             int materialsfnlen(0);
-            OK = ( sscanf( data, " %s \n", &materialsfn ) == 1 );
+            OK = (sscanf(data, " %s \n", &materialsfn) == 1);
             materialsfnlen = strlen(materialsfn) + 1;
             if (OK)
             {
-                OK = solver.LoadMaterials( materialsfn );
+                OK = solver.LoadMaterials(materialsfn);
             }
             break;
         }
@@ -296,7 +298,7 @@ bool VFEModel::execute_command(int command)
             xyzType totelems;
             char modelfn[MAX_FILENAME_LENGTH];
             int modelfnlen(0);
-            if( SCRIPTVERSION != 2 ) // default
+            if(SCRIPTVERSION != 2) // default
                 OK = (sscanf(data, " %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &modelfn) == 4);
             else
                 OK = (sscanf(data, " %d %d %d %d %s \n", &vdims[0], &vdims[1], &vdims[2], &totelems, &modelfn) == 5);
@@ -304,12 +306,12 @@ bool VFEModel::execute_command(int command)
             modelfnlen = strlen(modelfn) + 1;
             if (OK)
             {
-                OK = solver.SetVoxelDimensions( vdims[0], vdims[1], vdims[2]);
+                OK = solver.SetVoxelDimensions(vdims[0], vdims[1], vdims[2]);
                 if (OK)
                 {
                     if (SCRIPTVERSION == 2)
                     {
-                        OK = solver.SetTotElems( totelems );
+                        OK = solver.SetTotElems(totelems);
                     }
                 }
             }
@@ -337,7 +339,7 @@ bool VFEModel::execute_command(int command)
             OK = (sscanf(data, " %d \n", &themaxiter) == 1);
             if (OK)
             {
-                OK = solver.SetMaxIter( themaxiter );
+                OK = solver.SetMaxIter(themaxiter);
             }
             break;
         }
@@ -381,7 +383,7 @@ bool VFEModel::execute_command(int command)
             int constraintsfnlen(0);
             OK = (sscanf(data, " %s \n", &constraintsfn) == 1);
             constraintsfnlen = strlen(constraintsfn) + 1;
-            if (OK)
+            if(OK)
             {
                 OK = solver.LoadConstraints(constraintsfn);
             }
@@ -393,7 +395,7 @@ bool VFEModel::execute_command(int command)
             int Nastranfnlen(0);
             OK = (sscanf(data, " %s \n", &NastranFN) == 1);
             Nastranfnlen = strlen(NastranFN) + 1;
-            if (OK)
+            if(OK)
             {
                 OK = solver.toNASTRAN(NastranFN);
             }
@@ -426,17 +428,17 @@ bool VFEModel::execute_command(int command)
         case CMD_PRINT_DISPLACEMENTS : // PRINT DISPLACEMENTS
         {
             // only MASTER process prints displacements (for now)
-            if (solver.SOLVE_DONE)
+            if(solver.SOLVE_DONE)
             {
                 char outputfn[MAX_FILENAME_LENGTH];
                 OK = (sscanf(data, " %s \n", &outputfn) == 1);
-                if (OK)
+                if(OK)
                     OK = solver.PrintDisplacements(outputfn);
             
             }// if solve done
             else
             {
-                printf( "%d: ERROR: cannot print displacements before solving! \n");
+                printf("ERROR: cannot print displacements before solving! \n");
                 OK = false;
             }
             
@@ -445,7 +447,7 @@ bool VFEModel::execute_command(int command)
 
         case CMD_FINISH : // FINISHED READING SCRIPT
         {
-            printf( "Finished reading script \n");
+            printf("Finished reading script \n");
             // cleanup here
             solver.FINISH_DONE = true;
             OK =  true;

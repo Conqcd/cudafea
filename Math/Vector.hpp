@@ -4,7 +4,7 @@
 class Vector
 {
 private:
-    std::vector<double> m_Vec;
+    std::vector<Scalar> m_Vec;
 public:
     Vector(idxType length);
     Vector() = default;
@@ -14,4 +14,8 @@ public:
 
     void reset(idxType);
     void destroy();
+    void fill(double);
+    void setvalues(const std::vector<idxType>&,const std::vector<Scalar>&);
+
+    std::vector<Scalar> generateScalar();
 };
