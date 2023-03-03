@@ -29,14 +29,14 @@ public:
     // get matrix
     const Matrix& getmat() const{ return matrix; }
     
-    double getval(const unsigned int index)
+    double getval(const unsigned int index) const
     {
         return matrix[index];
     }
     
 protected:
     
-    void create(GradientMatrix *GradientMatrices);
+    void create(const GradientMatrix& GradientMatrices);
     void create();
     void destroy();
 };

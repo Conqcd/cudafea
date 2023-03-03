@@ -40,7 +40,7 @@ void LocalStiffnessMatrix::create()
 }
 
 
-void LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
+void LocalStiffnessMatrix::create(const GradientMatrix& gradientMtx)
 {
     int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
     Matrix LSM(lsmlen,lsmlen), propXgradMtx, tempMtx;
@@ -57,7 +57,6 @@ void LocalStiffnessMatrix::create(GradientMatrix * gradientMtx)
         MatMatMult(*(gradientMtx[n].getmat_t()), propXgradMtx, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &tempMtx);
         
         MatAXPY(LSM, gradientMtx[n].getJdet(), tempMtx, DIFFERENT_NONZERO_PATTERN);
-        
     }// per integration point i, gradient matrix
 
     //ierr = MatScale(LSM, 0.125 * a * b * c); CHKERRQ(ierr);
