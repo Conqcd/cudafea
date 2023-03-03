@@ -463,7 +463,7 @@ bool vFESolver::PrintDisplacements(const char *filename)
 {
     // get displacements from node and output 
     
-    strcpy( OUTPUTFILE, filename );
+    strcpy(OUTPUTFILE, filename);
     
     bool OK(false);
     idxType globalID;
