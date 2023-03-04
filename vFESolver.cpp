@@ -161,7 +161,7 @@ bool vFESolver::LoadMaterials(const char *filename)
         printf("Creating Material Map \n");
         
         // compute gradient matrices : needed for computing LSM of each material
-        for(int n=0; n < SAMPLES_PER_ELEMENT; ++n){
+        for(int n = 0; n < SAMPLES_PER_ELEMENT; ++n){
     
             gradientMtx[n] = GradientMatrix(A_SIZE, B_SIZE, C_SIZE, n);
         }
