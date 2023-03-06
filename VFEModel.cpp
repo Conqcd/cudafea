@@ -43,6 +43,8 @@ void VFEModel::create_command_map()
     CommandM["SET_ALGORITHM_FEA"] = CMD_SET_ALGORITHM_FEA;
     CommandM["ALGORITHM_FEA"] = CMD_SET_ALGORITHM_FEA;
   
+    CommandM["GENERATE_CONSTRAINTS"] = CMD_GENERATE_CONSTRAINTS;
+
     // last command before solve is prompted
     CommandM["SELECTION_OF_NODES"] = CMD_SELECTION_OF_NODES; // DOES NOTHING !!
     CommandM["LOAD_CONSTRAINTS"] = CMD_LOAD_CONSTRAINTS;
@@ -379,6 +381,16 @@ bool VFEModel::execute_command(int command)
             break;
         }
 
+        case CMD_GENERATE_CONSTRAINTS: // LOAD CONSTRAINTS (FORCES, PRESERVED NODES)
+        {
+            char resultfn[MAX_FILENAME_LENGTH];
+            OK = (sscanf(data, " %s \n", &resultfn) == 1);
+            if(OK)
+            {
+                OK = solver.ComsolResult2COnstraint(resultfn);
+            }
+            break;
+        }
         case CMD_LOAD_CONSTRAINTS: // LOAD CONSTRAINTS (FORCES, PRESERVED NODES)
         {
             char constraintsfn[MAX_FILENAME_LENGTH];
