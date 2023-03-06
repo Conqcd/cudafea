@@ -17,7 +17,9 @@ Matrix::~Matrix()
 
 void Matrix::reset(idxType row,idxType col)
 {
-
+    m_Mat.clear();
+    m_Mat.resize(m_row);
+    m_col = col;
 }
 
 void Matrix::insert(idxType row,idxType col,double value)
@@ -32,7 +34,13 @@ void Matrix::add(idxType row,idxType col,double value)
 
 void Matrix::scale(double s)
 {
-
+    for (auto& row:m_Mat)
+    {
+        for (auto& item:row)
+        {
+            item.second *= s;
+        }
+    }
 }
 
 void Matrix::mult(const Matrix& m)
@@ -62,7 +70,10 @@ void Matrix::insertValues(const std::vector<idxType>& rowid,const std::vector<id
 
 void Matrix::PreAllocation(idxType num)
 {
-
+    for (auto& row:m_Mat)
+    {
+        row.resize(num);
+    }
 }
 
 namespace Math
