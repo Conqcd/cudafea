@@ -277,7 +277,7 @@ bool vFESolver::LoadModel(const char *filename)
 }// LoadModel()
 
 
-bool vFESolver::ComsolResult2COnstraint(const char *filename)
+bool vFESolver::ComsolResult2Constraint(const char *filename)
 {
     std::ifstream f;
     char buff[256];
@@ -301,16 +301,40 @@ bool vFESolver::ComsolResult2COnstraint(const char *filename)
     }// try
     catch(std::exception &e)
     {
-        printf("ERROR: could not open constraint file \n");
+        printf("ERROR: could not open Comsol result file \n");
         return false;
     }// catch
     f.close();
     double x, y, z;
     double vx, vy, vz;
+    std::ofstream consfile;
+    consfile.open("temp/constraint2.txt");
+    if(!consfile.is_open())
+    {
+        printf("ERROR: could not write output constraint file \n");
+        return false;
+    }
     for(auto& line:lines)
     {
-        sscanf(line.c_str(), "%lf %lf %lf %lf %lf %lf %d %d %d", &x, &y, &z, &vx, &vy, &vz);
+        sscanf(line.c_str(), "%lf %lf %lf %lf %lf %lf", &x, &y, &z, &vx, &vy, &vz);
+        if(vx == 0 && vy == 0 && vz == 0)
+        {
+            sprintf(buff,"SELECT_NODE_3D %d %d %d %lf %lf %lf 1 1 1\n",(int)x,(int)y,(int)z,vx,vy,vz);
+            Node<xyzType> * tmpnode = new Node<xyzType>();
+    
+    
+            tmpnode->x = x; tmpnode->y = y; tmpnode->z = z;
+
+            auto nitr = NodeS.find(tmpnode);
+            if(nitr == NodeS.end())
+            {
+                consfile.close();
+                return false;
+            }
+            consfile << buff;
+        }
     }
+    consfile.close();
     return true;
 }
 

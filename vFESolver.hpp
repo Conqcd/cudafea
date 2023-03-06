@@ -140,7 +140,7 @@ public:
     // Read model file and create Elem sets and Node sets
     bool LoadModel(const char *filename);
     
-    bool ComsolResult2COnstraint(const char *filename);
+    bool ComsolResult2Constraint(const char *filename);
 
     // Read constraints/forces file and add constraints.
     bool LoadConstraints(const char *filename);

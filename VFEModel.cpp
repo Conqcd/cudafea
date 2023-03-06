@@ -387,7 +387,7 @@ bool VFEModel::execute_command(int command)
             OK = (sscanf(data, " %s \n", &resultfn) == 1);
             if(OK)
             {
-                OK = solver.ComsolResult2COnstraint(resultfn);
+                OK = solver.ComsolResult2Constraint(resultfn);
             }
             break;
         }
