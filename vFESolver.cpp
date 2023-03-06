@@ -1051,7 +1051,7 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
                     materialidx = vFESolver::GetElementMaterial(cnitr, elem);
                     nodeL = elem;
                     
-                    for(int neighbour=0; neighbour<NODES_PER_ELEMENT; ++neighbour){// for each neighbouring node on element e
+                    for(int neighbour = 0; neighbour < NODES_PER_ELEMENT; ++neighbour){// for each neighbouring node on element e
                         renumNodeNeighbour = vFESolver::GetNodeNeighbourIndex(cnitr, elem, neighbour); //get renumbered index
                         
                         if(tmp_gsmcolidx.find(renumNodeNeighbour) == tmp_gsmcolidx.end()){ // if neighbouring doesn't already have a column number
