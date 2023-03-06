@@ -5,9 +5,7 @@
 //  Material.h
 //
 //
-
-#ifndef MATERIAL_H
-#define MATERIAL_H
+#pragma once
 
 #include "Common.hpp"
 #include "LocalStiffnessMatrix.hpp"
@@ -27,7 +25,3 @@ public:
     Material(midxType id, double ym, double pr, LocalStiffnessMatrix mat, bool rf);
     ~Material();
 };
-
-
-#endif /* MATERIAL_H */
-
