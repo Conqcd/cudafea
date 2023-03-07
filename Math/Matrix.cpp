@@ -251,10 +251,10 @@ void SymetrixSparseMatrix::insertValues(const std::vector<idxType>& rowid,const 
 void SymetrixSparseMatrix::PreAllocation(idxType num)
 {
     preA = num;
-    for (auto& row:m_Mat)
-    {
-        row.resize(preA);
-    }
+    // for (auto& row:m_Mat)
+    // {
+    //     row.resize(preA);
+    // }
 }
 
 double SymetrixSparseMatrix::index(idxType row,idxType col)const

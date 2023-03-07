@@ -1,1 +1,1 @@
-mpiexec -n 4 ./build/Debug/femsolver.exe vo.txt
+./build/Debug/femsolver.exe temp/vo.txt
