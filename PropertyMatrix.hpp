@@ -19,7 +19,7 @@ protected:
     double youngsm; // young's modulus
     double poissonsr; // poisson's ratio
     
-    Matrix matrix; // petsc matrix
+    DenseMatrix matrix; // petsc matrix
 
     void create();
     void destroy();

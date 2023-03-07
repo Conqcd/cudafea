@@ -1,4 +1,5 @@
 #include "Vector.hpp"
+#include <assert.h>
 
 Vector::Vector(idxType length)
 {
@@ -28,7 +29,7 @@ void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scala
 {
     assert(idvec.size() == valvec.size());
     int i = 0;
-    for (auto& id:idvec)
+    for (auto id:idvec)
     {
         m_Vec[id] = valvec[id++];
     }

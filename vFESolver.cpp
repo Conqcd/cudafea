@@ -1200,7 +1200,7 @@ bool vFESolver::Solve(){
     FILE * outFile;
     
     // PC prec;              // preconditioner
-    Matrix GSM;              // GSM
+    SymetrixSparseMatrix GSM;              // GSM
     Vector sol;              // solution
     Vector rhs;              // rhs (force) vector
     int iters = 0;       // number of iterations

@@ -18,7 +18,7 @@ public:
     double a, b, c; // voxel sizes (x, y, z)
     
     
-    Matrix matrix; // local stiffness matrix
+    DenseMatrix matrix; // local stiffness matrix
     
     LocalStiffnessMatrix();
     LocalStiffnessMatrix(const double a, const double b, const double c, const double ym, const double pr);

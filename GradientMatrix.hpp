@@ -30,8 +30,8 @@ protected:
     IntegrationMatrix integMtx;
     Diff_Ni_j diffMtx;
     double Jdet;
-    Matrix matrix; // petsc matrix
-    Matrix transpose; // transpose of pmatrix
+    DenseMatrix matrix; // petsc matrix
+    DenseMatrix transpose; // transpose of pmatrix
     
     
     void create();

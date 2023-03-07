@@ -44,7 +44,7 @@ void LocalStiffnessMatrix::create()
 void LocalStiffnessMatrix::create(const std::vector<GradientMatrix>& gradientMtx)
 {
     int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
-    Matrix LSM(lsmlen,lsmlen), propXgradMtx, tempMtx;
+    DenseMatrix LSM(lsmlen,lsmlen), propXgradMtx, tempMtx;
     
     // Build Property Matrix
     PropertyMatrix propMtx(youngsm, poissonsr);

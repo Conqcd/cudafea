@@ -1,38 +1,105 @@
 #include "Matrix.hpp"
 
-Matrix::Matrix()
-        : m_row(0) , m_col(0)
+DenseMatrix::DenseMatrix()
 {
 }
 
-Matrix::Matrix(idxType row,idxType col)
-        : m_row(row) , m_col(col)
+DenseMatrix::DenseMatrix(idxType row,idxType col)
+        : Matrix(row,col)
+{
+}
+
+DenseMatrix::~DenseMatrix()
+{
+}
+
+void DenseMatrix::reset(idxType row,idxType col)
+{
+    m_Mat.resize(m_row);
+    m_col = col;
+}
+
+void DenseMatrix::insert(idxType row,idxType col,double value)
+{
+
+}
+
+void DenseMatrix::add(idxType row,idxType col,double value)
+{
+
+}
+
+void DenseMatrix::scale(double s)
+{
+
+}
+
+void DenseMatrix::mult(const Matrix& m)
+{
+
+}
+
+void DenseMatrix::mult(const Matrix& m1,const Matrix& m2)
+{
+
+}
+
+void DenseMatrix::AXPY(double a,const Matrix& x)
+{
+
+}
+
+void DenseMatrix::destroy()
+{
+        
+}
+
+void DenseMatrix::insertValues(const std::vector<idxType>& rowid,const std::vector<idxType>& colid,const std::vector<Scalar>& values)
+{
+
+}
+
+void DenseMatrix::PreAllocation(idxType num)
+{
+    for (auto& row:m_Mat)
+    {
+        row.resize(num);
+    }
+}
+
+SymetrixSparseMatrix::SymetrixSparseMatrix()
+{
+
+}
+
+SymetrixSparseMatrix::SymetrixSparseMatrix(idxType row,idxType col)
+        : Matrix(row,col)
 {
     m_Mat.resize(m_row);
 }
 
-Matrix::~Matrix()
+SymetrixSparseMatrix::~SymetrixSparseMatrix()
 {
 }
 
-void Matrix::reset(idxType row,idxType col)
+void SymetrixSparseMatrix::reset(idxType row,idxType col)
 {
     m_Mat.clear();
     m_Mat.resize(m_row);
     m_col = col;
 }
 
-void Matrix::insert(idxType row,idxType col,double value)
+void SymetrixSparseMatrix::insert(idxType row,idxType col,double value)
 {
 
 }
 
-void Matrix::add(idxType row,idxType col,double value)
+void SymetrixSparseMatrix::add(idxType row,idxType col,double value)
 {
 
 }
 
-void Matrix::scale(double s)
+void SymetrixSparseMatrix::scale(double s)
 {
     for (auto& row:m_Mat)
     {
@@ -43,42 +110,42 @@ void Matrix::scale(double s)
     }
 }
 
-void Matrix::mult(const Matrix& m)
+void SymetrixSparseMatrix::mult(const Matrix& m)
 {
 
 }
 
-void Matrix::mult(const Matrix& m1,const Matrix& m2)
+void SymetrixSparseMatrix::mult(const Matrix& m1,const Matrix& m2)
 {
 
 }
 
-void Matrix::AXPY(double a,const Matrix& x)
+void SymetrixSparseMatrix::AXPY(double a,const Matrix& x)
 {
 
 }
 
-void Matrix::destroy()
+void SymetrixSparseMatrix::destroy()
 {
         
 }
 
-void Matrix::insertValues(const std::vector<idxType>& rowid,const std::vector<idxType>& colid,const std::vector<Scalar>& values)
+void SymetrixSparseMatrix::insertValues(const std::vector<idxType>& rowid,const std::vector<idxType>& colid,const std::vector<Scalar>& values)
 {
 
 }
 
-void Matrix::PreAllocation(idxType num)
+void SymetrixSparseMatrix::PreAllocation(idxType num)
 {
     for (auto& row:m_Mat)
     {
         row.resize(num);
     }
 }
-
 namespace Math
 {
-Matrix transpose(const Matrix& m)
+
+DenseMatrix transpose(const DenseMatrix& m)
 {
     return {};
 }
