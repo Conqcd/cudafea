@@ -8,6 +8,9 @@ DenseMatrix::DenseMatrix()
 DenseMatrix::DenseMatrix(idxType row,idxType col)
         : Matrix(row,col)
 {
+    m_Mat.resize(m_row);
+    for(auto& row:m_Mat)
+        row.resize(col);
 }
 
 DenseMatrix::~DenseMatrix()
@@ -17,11 +20,11 @@ DenseMatrix::~DenseMatrix()
 void DenseMatrix::reset(idxType row,idxType col)
 {
     m_Mat.clear();
+    m_row = row;
+    m_col = col;
     m_Mat.resize(m_row);
     for(auto& row:m_Mat)
         row.resize(col);
-    m_row = row;
-    m_col = col;
 }
 
 void DenseMatrix::insert(idxType row,idxType col,double value)
@@ -45,31 +48,34 @@ void DenseMatrix::mult(const Matrix& m)
 {
     assert(m_col == m.get_row());
     decltype(m_Mat) mat(m_row);
-
+    
     for (int i = 0; i < m_row; i++)
     {
-        mat.resize(m.get_col());
+        mat[i].resize(m.get_col());
         for (int j = 0; j < mat[i].size(); j++)
         {
-            for (int k = 0; k < mat[i].size(); k++)
+            for (int k = 0; k < m_col; k++)
             {
                 mat[i][j] += m_Mat[i][k] * m.index(k,j);
             }
         }
     }
+    m_col = m.get_col();
     m_Mat = mat;
 }
 
 void DenseMatrix::mult(const Matrix& m1,const Matrix& m2)
 {
     assert(m1.get_col() == m2.get_row());
+    m_row = m1.get_row();
+    m_col = m2.get_col();
     decltype(m_Mat) mat(m1.get_row());
     for (int i = 0; i < m_row; i++)
     {
-        mat.resize(m2.get_col());
+        mat[i].resize(m2.get_col());
         for (int j = 0; j < mat[i].size(); j++)
         {
-            for (int k = 0; k < mat[i].size(); k++)
+            for (int k = 0; k < m1.get_col(); k++)
             {
                 mat[i][j] += m1.index(i,k) * m2.index(k,j);
             }
@@ -84,6 +90,7 @@ void DenseMatrix::AXPY(double a,const Matrix& x)
     int c = 0,r = 0;
     for(auto& row:m_Mat)
     {
+        c = 0;
         for(auto&col : row)
         {
             col += a * x.index(r,c);
@@ -120,12 +127,13 @@ double DenseMatrix::index(idxType row,idxType col)const
 }
 
 SymetrixSparseMatrix::SymetrixSparseMatrix()
+                    : preA(0)
 {
 
 }
 
 SymetrixSparseMatrix::SymetrixSparseMatrix(idxType row,idxType col)
-        : Matrix(row,col)
+        : Matrix(row,col) ,preA(0)
 {
     m_Mat.resize(m_row);
 }
@@ -137,9 +145,9 @@ SymetrixSparseMatrix::~SymetrixSparseMatrix()
 void SymetrixSparseMatrix::reset(idxType row,idxType col)
 {
     m_Mat.clear();
-    m_Mat.resize(m_row);
     m_row = row;
     m_col = col;
+    m_Mat.resize(m_row);
 }
 
 void SymetrixSparseMatrix::insert(idxType row,idxType col,double value)
@@ -152,6 +160,7 @@ void SymetrixSparseMatrix::insert(idxType row,idxType col,double value)
             return;
         }
     }
+    assert(m_Mat[row].size() < preA);
     m_Mat[row].emplace_back(col,value);
 }
 
@@ -165,6 +174,7 @@ void SymetrixSparseMatrix::add(idxType row,idxType col,double value)
             return;
         }
     }
+    assert(m_Mat[row].size() < preA);
     m_Mat[row].emplace_back(col,value);
 }
 
@@ -182,25 +192,25 @@ void SymetrixSparseMatrix::scale(double s)
 void SymetrixSparseMatrix::mult(const Matrix& m)
 {
     assert(m_col == m.get_row());
-    decltype(m_Mat) mat(m_row);
+    // decltype(m_Mat) mat(m_row);
 
-    for (int i = 0; i < m_row; i++)
-    {
-        mat.resize(m.get_col());
-        for (int j = 0; j < mat[i].size(); j++)
-        {
-            for (int k = 0; k < mat[i].size(); k++)
-            {
-                // mat[i][j] += m_Mat[i][k] * m.index(k,j);
-            }
-        }
-    }
-    m_Mat = mat;
+    // for (int i = 0; i < m_row; i++)
+    // {
+    //     mat.resize(m.get_col());
+    //     for (int j = 0; j < mat[i].size(); j++)
+    //     {
+    //         for (int k = 0; k < mat[i].size(); k++)
+    //         {
+    //             mat[i][j] += m_Mat[i][k] * m.index(k,j);
+    //         }
+    //     }
+    // }
+    // m_Mat = mat;
 }
 
 void SymetrixSparseMatrix::mult(const Matrix& m1,const Matrix& m2)
 {
-
+    assert(m1.get_col() == m2.get_row());
 }
 
 void SymetrixSparseMatrix::AXPY(double a,const Matrix& x)
@@ -215,14 +225,35 @@ void SymetrixSparseMatrix::destroy()
 
 void SymetrixSparseMatrix::insertValues(const std::vector<idxType>& rowid,const std::vector<idxType>& colid,const std::vector<Scalar>& values)
 {
-
+    int id = 0;
+    for(auto& row:rowid)
+        for(auto& col:colid)
+        {
+            assert(row < m_row && row >= 0 && col < m_col && col >= 0);
+            bool exist = false;
+            for(auto& cc:m_Mat[row])
+            {
+                if(col == cc.first)
+                {
+                    cc.second = values[id++];
+                    exist = true;
+                    break;
+                }
+            }
+            if(!exist)
+            {
+                assert(m_Mat[row].size() < preA);
+                m_Mat[row].emplace_back(col,values[id++]);
+            }
+        }
 }
 
 void SymetrixSparseMatrix::PreAllocation(idxType num)
 {
+    preA = num;
     for (auto& row:m_Mat)
     {
-        row.resize(num);
+        row.resize(preA);
     }
 }
 
@@ -239,7 +270,15 @@ namespace Math
 
 DenseMatrix transpose(const DenseMatrix& m)
 {
-    return {};
+    DenseMatrix res(m.get_col(),m.get_row());
+    for (int i = 0; i < res.get_row(); i++)
+    {
+        for (int j = 0; j < res.get_col(); j++)
+        {
+            res.insert(i,j,m.index(j,i));
+        }
+    }
+    return res;
 }
     
 } // namespace Math

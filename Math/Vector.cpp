@@ -31,7 +31,7 @@ void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scala
     int i = 0;
     for (auto id:idvec)
     {
-        m_Vec[id] = valvec[id++];
+        m_Vec[id] = valvec[i++];
     }
 }
 

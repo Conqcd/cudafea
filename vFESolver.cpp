@@ -429,8 +429,8 @@ bool vFESolver::LoadConstraints(const char *filename){
     }// for line in lines
 
     totalrhs = DOF_3D * (totlines - conscount);
-    forcevalue.resize(totalrhs);
-    forcecolidx.resize(totalrhs);
+    // forcevalue.resize(totalrhs);
+    // forcecolidx.resize(totalrhs);
 
 	
     conscount = 0; // not important here
@@ -787,20 +787,26 @@ bool vFESolver::AddConstraint(const xyzType x, const xyzType y, const xyzType z,
     	
         if (!cx) // add force
         {
-            forcevalue[forcecount] = vx;
-            forcecolidx[forcecount] = nidx * DOF_3D + 0;
+            // forcevalue[forcecount] = vx;
+            forcevalue.push_back(vx);
+            // forcecolidx[forcecount] = nidx * DOF_3D + 0;
+            forcecolidx.push_back(nidx * DOF_3D + 0);
             ++forcecount;
         }
         if (!cy) // add force
         {
-            forcevalue[forcecount] = vy;
-            forcecolidx[forcecount] = nidx * DOF_3D + 1;
+            // forcevalue[forcecount] = vy;
+            forcevalue.push_back(vy);
+            // forcecolidx[forcecount] = nidx * DOF_3D + 1;
+            forcecolidx.push_back(nidx * DOF_3D + 1);
             ++forcecount;
         }
         if (!cz) // add force
         {
-            forcevalue[forcecount] = vz;
-            forcecolidx[forcecount] = nidx * DOF_3D + 2;
+            // forcevalue[forcecount] = vz;
+            forcevalue.push_back(vz);
+            // forcecolidx[forcecount] = nidx * DOF_3D + 2;
+            forcecolidx.push_back(nidx * DOF_3D + 2);
             ++forcecount;
         }
     	// if force
@@ -964,9 +970,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     // allocate GSM rows
     vFESolver::AllocateLocalMatrix(GSM);
     
-    
     // inclusive of first, exclusive of last
-    int localfirst = 0, locallast = 0;
+    int localfirst = 0, locallast = globalgsmrows;
     // MatGetOwnershipRange(*GSM, &localfirst, &locallast);
     
     printf("GSM local owns : first row = %d, last row = %d \n", localfirst, locallast - 1);
