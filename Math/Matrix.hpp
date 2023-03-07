@@ -25,10 +25,11 @@ public:
     virtual void destroy() = 0;
     virtual void insertValues(const std::vector<idxType>&,const std::vector<idxType>&,const std::vector<Scalar>&) = 0;
     virtual void PreAllocation(idxType) = 0;
+    virtual double index(idxType,idxType)const = 0;
 
 
-    idxType get_row()const {return m_row;}
-    idxType get_col()const {return m_col;}
+    inline idxType get_row()const {return m_row;}
+    inline idxType get_col()const {return m_col;}
     virtual double operator[](unsigned int index)const = 0;
 };
 class DenseMatrix :public Matrix
@@ -50,12 +51,12 @@ public:
     virtual void destroy() override;
     virtual void insertValues(const std::vector<idxType>&,const std::vector<idxType>&,const std::vector<Scalar>&) override;
     virtual void PreAllocation(idxType) override;
+    virtual double index(idxType row,idxType col)const override;
 
     virtual double operator[](unsigned int index)const override
     {
         return 0;
     }
-
 };
 
 class SymetrixSparseMatrix : public Matrix
@@ -77,6 +78,7 @@ public:
     virtual void destroy()override;
     virtual void insertValues(const std::vector<idxType>&,const std::vector<idxType>&,const std::vector<Scalar>&)override;
     virtual void PreAllocation(idxType)override;
+    virtual double index(idxType row,idxType col)const override;
 
 
     virtual double operator[](unsigned int index)const override
