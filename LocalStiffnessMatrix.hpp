@@ -34,10 +34,10 @@ public:
         return matrix[index];
     }
     
-protected:
-    
     void create(const std::vector<GradientMatrix>& GradientMatrices);
     void create();
+protected:
+    
     void destroy();
 };
 

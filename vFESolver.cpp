@@ -2,6 +2,7 @@
 
 #include "vFESolver.hpp"
 #include<chrono>
+#include<thread>
 
 //============ Constructor / Destructor
 
@@ -202,8 +203,22 @@ bool vFESolver::LoadMaterials(const char *filename)
         printf("ERROR: voxel sizes must be specified before loading materials \n");
         OK = false;
     }// voxel size or voxel dimensions not specified
-    
-    
+    const int thread_num = std::thread::hardware_concurrency();
+    const int max_threads = std::min((int)MateM.size(),thread_num);
+    std::vector<std::thread> threads(max_threads);
+    for (int i = 0; i < max_threads; i++)
+    {
+        threads[i] = std::thread([&,i](){
+            for (int j = i; j < MateM.size(); j += max_threads)
+            {
+                MateM[j].lsm.create(gradientMtx);
+            }
+        });
+    }
+    for(auto& entry:threads)
+    {
+        entry.join();
+    }
     return OK;
 }// LoadMaterials()
 
@@ -583,7 +598,7 @@ bool vFESolver::toNASTRAN(const char* filename)
     for (auto& mat : MateM)
     {
         std::string line = psolid;
-        sprintf(space,"%8llu",mat.first + 1);
+        sprintf(space,"%8llu",mat.idx + 1);
         line += space;
         f << line << std::endl;
     }
@@ -661,12 +676,14 @@ bool vFESolver::AddMaterial(const midxType index, const double ym, const double 
     {
         LocalStiffnessMatrix lsm(A_SIZE, B_SIZE, C_SIZE, ym, pr, gradientMtx);
          
-        Material * new_material = new Material(index, ym, pr, lsm, rf);
+        // Material * new_material = new Material(index, ym, pr, lsm, rf);
         
-        MateM[index] = (*new_material);
+        if(MateM.size() <= index)
+            MateM.resize(index + 1);
+        MateM[index] = {index,ym,pr,lsm,(bool)rf};
         
-        delete new_material;
-        new_material = 0;
+        // delete new_material;
+        // new_material = 0;
         
         OK = true;
     }
@@ -695,7 +712,8 @@ bool vFESolver::AddElement(const midxType material, const xyzType x, const xyzTy
     try
     {
         // does material exist ?
-        if (!(MateM.find(material) != MateM.end()))
+        // if (!(MateM.find(material) != MateM.end()))
+        if (material >= MateM.size())
         {
             printf("ERROR: material %d does not exist \n",material);
             OK = false;

@@ -53,14 +53,14 @@ public:
     
     typedef        std::set<Element<xyzType>*,compare<Element<xyzType>,xyzType>>    ElementSet; // set of elements
     typedef        std::set<Node<xyzType>*,compare<Node<xyzType>,xyzType>>          NodeSet;    // set of nodes
-    typedef        std::map<midxType,Material>      MaterialMap;   // map of materials
+    typedef        std::vector<Material>      MaterialVector;   // map of materials
     typedef        std::vector<std::string>         VecString;     // vector of strings
 
     
     // specific sets/maps
     ElementSet      ElemS;  // set of valid elements;
     NodeSet         NodeS;  // set of valid nodes;
-    MaterialMap     MateM;  // map of all materials
+    MaterialVector     MateM;  // map of all materials
     
     
     // iterators
@@ -68,8 +68,8 @@ public:
     typedef        ElementSet::const_iterator   ElementSet_const_it;
     typedef        NodeSet::iterator            NodeSet_it;
     typedef        NodeSet::const_iterator      NodeSet_const_it;
-    typedef        MaterialMap::iterator        MaterialMap_it;
-    typedef        MaterialMap::const_iterator  MaterialMap_const_it;
+    typedef        MaterialVector::iterator        MaterialVec_it;
+    typedef        MaterialVector::const_iterator  MaterialVec_const_it;
     typedef        VecString::iterator          VecString_it;
 
     

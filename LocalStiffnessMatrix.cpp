@@ -13,13 +13,13 @@ LocalStiffnessMatrix::LocalStiffnessMatrix() : a(1.0), b(1.0), c(1.0), youngsm(1
 LocalStiffnessMatrix::LocalStiffnessMatrix(const double a_size, const double b_size, const double c_size, const double ym, const double pr) 
     :   a(a_size), b(b_size), c(c_size), youngsm(ym), poissonsr(pr)
 {
-    create();
+    // create();
 }
 
 LocalStiffnessMatrix::LocalStiffnessMatrix(const double a_size, const double b_size, const double c_size, const double ym, const double pr,const std::vector<GradientMatrix>& GradientMatrices)
     :   a(a_size), b(b_size), c(c_size), youngsm(ym), poissonsr(pr)
 {
-    create(GradientMatrices);
+    // create(GradientMatrices);
 }
 
 LocalStiffnessMatrix::~LocalStiffnessMatrix()
