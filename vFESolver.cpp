@@ -1003,7 +1003,6 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     {
         threads[i] = std::thread([&,i](){
 
-        idxType gsmcolcount(0);
         std::map<idxType, idxType> tmp_gsmcolidx;
         idxType currentcol(0);
         std::vector<idxType> gsmCol(NUM_TERMS);
@@ -1044,7 +1043,6 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
             renumNode = vFESolver::GetNodeIndex(cnitr); // renumbered or local index
             
             // reset stuff...
-            gsmcolcount = 0;
             tmp_gsmcolidx.clear();
             
             // for (c = 0; c < NUM_TERMS; ++c) {

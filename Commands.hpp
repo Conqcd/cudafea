@@ -11,7 +11,7 @@
 #define MAX_FILENAME_LENGTH 256
 
 // Rank of the master process
-enum { MASTER=0 };
+enum { MASTER = 0 };
 
 //======================== COMMANDS =====================================
 
