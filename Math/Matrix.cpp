@@ -152,30 +152,23 @@ void SymetrixSparseMatrix::reset(idxType row,idxType col)
 
 void SymetrixSparseMatrix::insert(idxType row,idxType col,double value)
 {
-    for(auto& coll:m_Mat[row])
+    if(m_Mat[row].count(col) == 0)
     {
-        if(coll.first == col)
-        {
-            coll.second = value;
-            return;
-        }
+        assert(m_Mat[row].size() < preA);
     }
-    assert(m_Mat[row].size() < preA);
-    m_Mat[row].emplace_back(col,value);
+    m_Mat[row][col] += value;
 }
 
 void SymetrixSparseMatrix::add(idxType row,idxType col,double value)
 {
-    for(auto& coll:m_Mat[row])
+    if(m_Mat[row].count(col) == 0)
     {
-        if(coll.first == col)
-        {
-            coll.second += value;
-            return;
-        }
+        assert(m_Mat[row].size() < preA);
+        m_Mat[row][col] = value;
+    }else
+    {
+        m_Mat[row][col] += value;
     }
-    assert(m_Mat[row].size() < preA);
-    m_Mat[row].emplace_back(col,value);
 }
 
 void SymetrixSparseMatrix::scale(double s)
@@ -231,26 +224,17 @@ void SymetrixSparseMatrix::insertValues(const std::vector<idxType>& rowid,const 
         {
             assert(row < m_row && row >= 0 && col < m_col && col >= 0);
             bool exist = false;
-            for(auto& cc:m_Mat[row])
-            {
-                if(col == cc.first)
-                {
-                    cc.second = values[id++];
-                    exist = true;
-                    break;
-                }
-            }
-            if(!exist)
+            if(m_Mat[row].count(col) == 0)
             {
                 assert(m_Mat[row].size() < preA);
-                m_Mat[row].emplace_back(col,values[id++]);
             }
-        }
+            m_Mat[row][col] = values[id++];
+    }
 }
 
 void SymetrixSparseMatrix::PreAllocation(idxType num)
 {
-    preA = num;
+    preA = std::min(num,m_col);
     // for (auto& row:m_Mat)
     // {
     //     row.resize(preA);
@@ -258,11 +242,10 @@ void SymetrixSparseMatrix::PreAllocation(idxType num)
 }
 
 double SymetrixSparseMatrix::index(idxType row,idxType col)const
-{ 
-    for(auto& coll:m_Mat[row])
-        if(coll.first == col)
-            return coll.second;
-    return 0;
+{
+    if(m_Mat[row].count(col) == 0)
+        return 0;
+    return m_Mat[row].at(col);
 }
 
 namespace Math

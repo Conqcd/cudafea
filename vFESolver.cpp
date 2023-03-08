@@ -989,57 +989,56 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     vFESolver::AllocateLocalMatrix(GSM);
     
     // inclusive of first, exclusive of last
-    int localfirst = 0, locallast = globalgsmrows;
-    // MatGetOwnershipRange(*GSM, &localfirst, &locallast);
-    
-    printf("GSM local owns : first row = %d, last row = %d \n", localfirst, locallast - 1);
-    
-    idxType gsmcolcount(0);
-    std::map<idxType, idxType> tmp_gsmcolidx;
-    idxType currentcol(0);
-    int numcols(0);
-    std::vector<idxType> gsmCol(NUM_TERMS);
-    std::vector<idxType> gsmRowX(1), gsmRowY(1), gsmRowZ(1);
-    
-    std::vector<Scalar> gsmvalRowX(NUM_TERMS); // row-centric storage etc.
-    std::vector<Scalar> gsmvalRowY(NUM_TERMS);
-    std::vector<Scalar> gsmvalRowZ(NUM_TERMS);
-    
-    bool consnodeX(1); // is curnode constrained in X dim Default is 1 (true)
-    bool consnodeY(1); // is curnode constrained in Y dim Default is 1 (true)
-    bool consnodeZ(1); // is curnode constrained in Z dim Default is 1 (true)
-    
-    bool consnodeNeighbourX(1); // is curennode constrained in X dim Default is 1  (true)
-    bool consnodeNeighbourY(1); // is curennode constrained in X dim Default is 1  (true)
-    bool consnodeNeighbourZ(1); // is curennode constrained in X dim Default is 1  (true)
-    
-    bool constraintX[DOF_3D] = {1,1,1}; // should X dim term be added to GSM Default is 1 (yes)
-    bool constraintY[DOF_3D] = {1,1,1}; // should Y dim term be added to GSM Default is 1 (yes)
-    bool constraintZ[DOF_3D] = {1,1,1}; // should Z dim term be added to GSM Default is 1 (yes)
-    
-    ////////////////////////
-    // BUILD GSM BY LOOPING THROUGH NODES IN NodeS
-    ///////////////////////
-    
-    unsigned int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
-    
-    idxType nodecount(0); // renumbering of nodes
-    idxType nodes[NODES_PER_ELEMENT], renumNode(0), renumNodeNeighbour(0), nodeL(0), nodeNeighbourL(0);
-    idxType nodeG(0), elemNeighbourG(0), nodeNeighbourG(0);
-    idxType e, enn;
-    midxType materialidx;
-    xyzType c, colindex;
-    
-    idxType count(0);
-    
-    NodeSet_const_it cnitr;
-    
-    for(cnitr = NodeS.begin(); cnitr != NodeS.end(); ++cnitr)
-    {
 
-        renumNode = vFESolver::GetNodeIndex(cnitr); // renumbered or local index
+    const unsigned int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
+    const int thread_num = std::thread::hardware_concurrency();
+    const int max_threads = std::min((int)NodeS.size(),thread_num);
+
+    // Threads
+    std::vector<std::thread> threads(max_threads);
+    for (int i = 0; i < max_threads; i++)
+    {
+        threads[i] = std::thread([&,i](){
+            
+        idxType gsmcolcount(0);
+        std::map<idxType, idxType> tmp_gsmcolidx;
+        idxType currentcol(0);
+        std::vector<idxType> gsmCol(NUM_TERMS);
+        std::vector<idxType> gsmRowX(1), gsmRowY(1), gsmRowZ(1);
         
-        if(renumNode >= localfirst && renumNode < locallast){ // if this localrow is on rank
+        std::vector<Scalar> gsmvalRowX(NUM_TERMS); // row-centric storage etc.
+        std::vector<Scalar> gsmvalRowY(NUM_TERMS);
+        std::vector<Scalar> gsmvalRowZ(NUM_TERMS);
+        
+        bool consnodeX(1); // is curnode constrained in X dim Default is 1 (true)
+        bool consnodeY(1); // is curnode constrained in Y dim Default is 1 (true)
+        bool consnodeZ(1); // is curnode constrained in Z dim Default is 1 (true)
+        
+        bool consnodeNeighbourX(1); // is curennode constrained in X dim Default is 1  (true)
+        bool consnodeNeighbourY(1); // is curennode constrained in X dim Default is 1  (true)
+        bool consnodeNeighbourZ(1); // is curennode constrained in X dim Default is 1  (true)
+        
+        bool constraintX[DOF_3D] = {1,1,1}; // should X dim term be added to GSM Default is 1 (yes)
+        bool constraintY[DOF_3D] = {1,1,1}; // should Y dim term be added to GSM Default is 1 (yes)
+        bool constraintZ[DOF_3D] = {1,1,1}; // should Z dim term be added to GSM Default is 1 (yes)
+        
+        ////////////////////////
+        // BUILD GSM BY LOOPING THROUGH NODES IN NodeS
+        ///////////////////////
+        
+        idxType renumNode(0), renumNodeNeighbour(0), nodeL(0), nodeNeighbourL(0);
+        idxType e, enn;
+        midxType materialidx;
+        xyzType c, colindex;
+        auto cnitr = NodeS.begin();
+        for (int j = 0; j < i; j++)
+        {
+            ++cnitr;
+        }
+        
+        for(;cnitr != NodeS.end();)
+        {
+            renumNode = vFESolver::GetNodeIndex(cnitr); // renumbered or local index
             
             // reset stuff...
             gsmcolcount = 0;
@@ -1047,9 +1046,9 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
             
             for (c = 0; c < NUM_TERMS; ++c) {
                 gsmCol[c] = 0;
-                gsmvalRowX[c]=0;
-                gsmvalRowY[c]=0;
-                gsmvalRowZ[c]=0;
+                gsmvalRowX[c] = 0;
+                gsmvalRowY[c] = 0;
+                gsmvalRowZ[c] = 0;
             }
             
             gsmRowX[0] = renumNode * DOF_3D  + 0;
@@ -1128,33 +1127,24 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
                             int yrowidx = (nodeL * DOF_3D + 1) * lsmlen + nodeNeighbourL * DOF_3D + c;
                             int zrowidx = (nodeL * DOF_3D + 2) * lsmlen + nodeNeighbourL * DOF_3D + c;
                             
-                            
                             // add gsm value. Access correct LSM in MATERIALMAP using material index materialidx
                             gsmvalRowX[colindex] += vFESolver::GetLSMValue(materialidx, xrowidx) * constraintX[c];  // x row
                             gsmvalRowY[colindex] += vFESolver::GetLSMValue(materialidx, yrowidx) * constraintY[c];  // y row
                             gsmvalRowZ[colindex] += vFESolver::GetLSMValue(materialidx, zrowidx) * constraintZ[c];  // z row
-                            
                         }// for each component
                         
                     }// for each neighbouring node enn on element e
                 }// if valid element e
             }// for each element e of current node
             
-            numcols = DOF_3D * gsmcolcount;
-            
-            // MatSetValues(*GSM, 1, gsmRowX, numcols, gsmCol, gsmvalRowX, INSERT_VALUES);
-            // MatSetValues(*GSM, 1, gsmRowY, numcols, gsmCol, gsmvalRowY, INSERT_VALUES);
-            // MatSetValues(*GSM, 1, gsmRowZ, numcols, gsmCol, gsmvalRowZ, INSERT_VALUES);
             GSM.insertValues(gsmRowX,gsmCol,gsmvalRowX);
             GSM.insertValues(gsmRowY,gsmCol,gsmvalRowY);
             GSM.insertValues(gsmRowZ,gsmCol,gsmvalRowZ);
-            
-            ++count;
-            
-        }// if on local rank
-        
-    }// for each node
+            for(int j = 0; j < max_threads && cnitr != NodeS.end();cnitr++,j++);
+        }// for each node
 
+        });
+    }
     //MatView(*GSM, PETSC_VIEWER_DRAW_WORLD);
     //MatView(*GSM, PETSC_VIEWER_STDOUT_WORLD);
     
@@ -1168,11 +1158,14 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     // nz_u = info.nz_used;
     // nz_un = info.nz_unneeded;
     
+
+    for(auto& entry:threads)
+    {
+        entry.join();
+    }
     printf("GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", mal, nz_a, nz_u, nz_un);
     printf("Leaving GSM\n");
-    
     return true;
-    
 }// computeGSM()
 
 

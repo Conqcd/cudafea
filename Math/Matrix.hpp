@@ -1,6 +1,8 @@
 #pragma once
 #include "../Common.hpp"
+#include "Vector.hpp"
 #include<vector>
+#include<map>
 
 template<typename T>
 using IdVal = std::pair<idxType,T>;
@@ -62,7 +64,7 @@ public:
 class SymetrixSparseMatrix : public Matrix
 {
 private:
-    std::vector<std::vector<IdVal<double>>> m_Mat;
+    std::vector<std::map<idxType,double>> m_Mat;
     idxType preA;
 public:
     SymetrixSparseMatrix();
@@ -84,7 +86,7 @@ public:
 
     virtual double operator[](unsigned int index)const override
     {
-        return 0;
+        return m_Mat[index / m_col].at(index % m_col);
     }
 };
 namespace Math
