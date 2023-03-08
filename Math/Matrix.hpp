@@ -55,7 +55,7 @@ public:
 
     virtual double operator[](unsigned int index)const override
     {
-        return 0;
+        return m_Mat[index / m_col][index % m_col];
     }
 };
 

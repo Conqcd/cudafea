@@ -24,7 +24,7 @@
 
 template <class T, class P>
 struct compare {
-    bool operator() ( T *n, T *m) const{
+    bool operator() (T *n, T *m) const{
         P nx = n->x; P mx = m->x;
         P ny = n->y; P my = m->y;
         P nz = n->z; P mz = m->z;
@@ -263,8 +263,8 @@ protected:
     
     bool GetNodeConsX(NodeSet_const_it cnitr)
     {
-        if( (*cnitr)->constraint )
-            return (* ((*cnitr)->constraint) ).cx;
+        if((*cnitr)->constraint)
+            return (*((*cnitr)->constraint)).cx;
         else
             return true;
     }
@@ -272,15 +272,15 @@ protected:
     bool GetNodeConsY(NodeSet_const_it cnitr)
     {
         if( (*cnitr)->constraint )
-            return (* ((*cnitr)->constraint) ).cy;
+            return (*((*cnitr)->constraint)).cy;
         else
             return true;
     }
     
     bool GetNodeConsZ(NodeSet_const_it cnitr)
     {
-        if( (*cnitr)->constraint )
-            return (* ((*cnitr)->constraint) ).cz;
+        if((*cnitr)->constraint)
+            return (*((*cnitr)->constraint)).cz;
         else
             return true;
     }
@@ -298,32 +298,32 @@ protected:
     
     midxType GetElementMaterial(NodeSet_const_it cnitr, int el)
     {
-        return (*( (*cnitr)->elems[el]) ).material;
+        return (*((*cnitr)->elems[el])).material;
     }
     
     idxType GetNodeNeighbourIndex(NodeSet_const_it cnitr, int el, int neighbour)
     {
-        return ( (*((*cnitr)->elems[el])).nodes[neighbour] )->idx;
+        return ((*((*cnitr)->elems[el])).nodes[neighbour])->idx;
     }
     
     bool GetNodeNeighbourConsX(NodeSet_const_it cnitr, int el, int neighbour)
     {
-        return (*(( (*((*cnitr)->elems[el])).nodes[neighbour] )->constraint) ).cx;
+        return (*(((*((*cnitr)->elems[el])).nodes[neighbour])->constraint)).cx;
     }
     
     bool GetNodeNeighbourConsY(NodeSet_const_it cnitr, int el, int neighbour)
     {
-        return (*(( (*((*cnitr)->elems[el])).nodes[neighbour] )->constraint) ).cy;
+        return (*(((*((*cnitr)->elems[el])).nodes[neighbour])->constraint)).cy;
     }
     
     bool GetNodeNeighbourConsZ(NodeSet_const_it cnitr, int el, int neighbour)
     {
-        return (*(( (*((*cnitr)->elems[el])).nodes[neighbour] )->constraint) ).cz;
+        return (*(((*((*cnitr)->elems[el])).nodes[neighbour])->constraint)).cz;
     }
     
     Constraint<xyzType>* GetNodeNeighbourCons(NodeSet_const_it cnitr, int el, int neighbour)
     {
-        return  ((* ((*cnitr)->elems[el])).nodes[neighbour])->constraint;
+        return  ((*((*cnitr)->elems[el])).nodes[neighbour])->constraint;
     }
     
     double GetLSMValue(midxType midx, idxType index)
