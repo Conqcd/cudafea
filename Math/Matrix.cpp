@@ -154,7 +154,7 @@ void SymetrixSparseMatrix::insert(idxType row,idxType col,double value)
 {
     if(m_Mat[row].count(col) == 0)
     {
-        assert(m_Mat[row].size() < preA);
+        assert(m_Mat[row].size() <= preA);
     }
     m_Mat[row][col] += value;
 }
@@ -163,7 +163,7 @@ void SymetrixSparseMatrix::add(idxType row,idxType col,double value)
 {
     if(m_Mat[row].count(col) == 0)
     {
-        assert(m_Mat[row].size() < preA);
+        assert(m_Mat[row].size() <= preA);
         m_Mat[row][col] = value;
     }else
     {
@@ -226,7 +226,7 @@ void SymetrixSparseMatrix::insertValues(const std::vector<idxType>& rowid,const 
             bool exist = false;
             if(m_Mat[row].count(col) == 0)
             {
-                assert(m_Mat[row].size() < preA);
+                assert(m_Mat[row].size() <= preA);
             }
             m_Mat[row][col] = values[id++];
     }
