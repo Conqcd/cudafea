@@ -991,8 +991,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     // inclusive of first, exclusive of last
 
     const unsigned int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
-    // const int thread_num = std::thread::hardware_concurrency();
-    const int thread_num = 4;
+    const int thread_num = std::thread::hardware_concurrency();
+    // const int thread_num = 1;
     const int max_threads = std::min((int)NodeS.size(),thread_num);
 
     
@@ -1180,8 +1180,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     }
 
     auto endT = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(endT - startT);
-    printf("GSM Building Time = %.5le s\n", static_cast<double>(duration.count()));
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
+    printf("GSM Building Time = %.5le ms\n", static_cast<double>(duration.count()));
     printf("GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", mal, nz_a, nz_u, nz_un);
     printf("Leaving GSM\n");
     return true;
