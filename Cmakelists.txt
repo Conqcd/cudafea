@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # if(MSVC)
 #     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 # endif()
+add_subdirectory(cudaCore)
+include_directories(cudaCore)
 
 file(GLOB SOURCES ./*.cpp ./Math/*.cpp)
 
@@ -33,4 +35,4 @@ include_directories(${PROJECT_SOURCE_DIR}$)
 
 add_executable(femsolver ${SOURCES})
 
-# target_link_libraries(femsolver libpetsc.dll)
+target_link_libraries(femsolver core)

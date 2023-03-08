@@ -992,7 +992,7 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
 
     const unsigned int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
     // const int thread_num = std::thread::hardware_concurrency();
-    const int thread_num = 8;
+    const int thread_num = 4;
     const int max_threads = std::min((int)NodeS.size(),thread_num);
 
     
@@ -1002,7 +1002,7 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     for (int i = 0; i < max_threads; i++)
     {
         threads[i] = std::thread([&,i](){
-            
+
         idxType gsmcolcount(0);
         std::map<idxType, idxType> tmp_gsmcolidx;
         idxType currentcol(0);
