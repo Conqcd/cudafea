@@ -991,7 +991,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     // inclusive of first, exclusive of last
 
     const unsigned int lsmlen = NODES_PER_ELEMENT * DOF_3D; // 24
-    const int thread_num = std::thread::hardware_concurrency();
+    // const int thread_num = std::thread::hardware_concurrency();
+    const int thread_num = 8;
     const int max_threads = std::min((int)NodeS.size(),thread_num);
 
     
@@ -1046,12 +1047,16 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
             gsmcolcount = 0;
             tmp_gsmcolidx.clear();
             
-            for (c = 0; c < NUM_TERMS; ++c) {
-                gsmCol[c] = 0;
-                gsmvalRowX[c] = 0;
-                gsmvalRowY[c] = 0;
-                gsmvalRowZ[c] = 0;
-            }
+            // for (c = 0; c < NUM_TERMS; ++c) {
+            //     gsmCol[c] = 0;
+            //     gsmvalRowX[c] = 0;
+            //     gsmvalRowY[c] = 0;
+            //     gsmvalRowZ[c] = 0;
+            // }
+            gsmCol.clear();
+            gsmvalRowX.clear();
+            gsmvalRowY.clear();
+            gsmvalRowZ.clear();
             
             gsmRowX[0] = renumNode * DOF_3D  + 0;
             gsmRowY[0] = renumNode * DOF_3D  + 1;
@@ -1069,7 +1074,7 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
             }
             
             // enn = neighbour, e = elem
-            for(int elem = 0; elem < NODES_PER_ELEMENT; ++elem){// for each element the node belongs to (max 8)
+            for(int elem = 0; elem < ELEMENTS_PER_NODE; ++elem){// for each element the node belongs to (max 8)
                 
                 if(vFESolver::GetNodeElement(cnitr, elem)){
                     materialidx = vFESolver::GetElementMaterial(cnitr, elem);
@@ -1078,9 +1083,22 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
                     for(int neighbour = 0; neighbour < NODES_PER_ELEMENT; ++neighbour){// for each neighbouring node on element e
                         renumNodeNeighbour = vFESolver::GetNodeNeighbourIndex(cnitr, elem, neighbour); //get renumbered index
                         
-                        if(tmp_gsmcolidx.find(renumNodeNeighbour) == tmp_gsmcolidx.end()){ // if neighbouring doesn't already have a column number
-                            tmp_gsmcolidx[renumNodeNeighbour] = gsmcolcount;
-                            ++gsmcolcount;
+                        if(tmp_gsmcolidx.find(renumNodeNeighbour) == tmp_gsmcolidx.end()){// if neighbouring doesn't already have a column number
+                            tmp_gsmcolidx[renumNodeNeighbour] = gsmCol.size() / 3;
+                            gsmCol.push_back(0);
+                            gsmCol.push_back(0);
+                            gsmCol.push_back(0);
+                            gsmvalRowX.push_back(0);
+                            gsmvalRowX.push_back(0);
+                            gsmvalRowX.push_back(0);
+                            gsmvalRowY.push_back(0);
+                            gsmvalRowY.push_back(0);
+                            gsmvalRowY.push_back(0);
+                            gsmvalRowZ.push_back(0);
+                            gsmvalRowZ.push_back(0);
+                            gsmvalRowZ.push_back(0);
+                            // tmp_gsmcolidx[renumNodeNeighbour] = gsmcolcount;
+                            // ++gsmcolcount;
                         }
                         currentcol = tmp_gsmcolidx[renumNodeNeighbour];
                         
@@ -1144,11 +1162,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
             GSM.insertValues(gsmRowZ,gsmCol,gsmvalRowZ);
             for(int j = 0; j < max_threads && cnitr != NodeS.end();cnitr++,j++);
         }// for each node
-
         });
     }
-    //MatView(*GSM, PETSC_VIEWER_DRAW_WORLD);
-    //MatView(*GSM, PETSC_VIEWER_STDOUT_WORLD);
     
     // Get info about GSM allocation etc.
     // MatInfo info;
@@ -1167,8 +1182,8 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     }
 
     auto endT = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
-    printf("GSM Building Time = %.5le \n", static_cast<double>(duration.count()));
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(endT - startT);
+    printf("GSM Building Time = %.5le s\n", static_cast<double>(duration.count()));
     printf("GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", mal, nz_a, nz_u, nz_un);
     printf("Leaving GSM\n");
     return true;

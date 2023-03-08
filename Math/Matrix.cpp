@@ -228,7 +228,10 @@ void SymetrixSparseMatrix::insertValues(const std::vector<idxType>& rowid,const 
             {
                 assert(m_Mat[row].size() <= preA);
             }
-            m_Mat[row][col] = values[id++];
+            if(values[id] != 0)
+                m_Mat[row][col] = values[id++];
+            else
+                id++;
     }
 }
 
