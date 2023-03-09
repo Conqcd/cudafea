@@ -35,7 +35,7 @@ void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scala
     }
 }
 
-std::vector<Scalar> Vector::generateScalar()
+std::vector<Scalar> Vector::generateScalar()const
 {
     return m_Vec;
 }

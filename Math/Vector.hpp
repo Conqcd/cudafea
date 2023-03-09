@@ -17,5 +17,6 @@ public:
     void fill(double);
     void setvalues(const std::vector<idxType>&,const std::vector<Scalar>&);
 
-    std::vector<Scalar> generateScalar();
+    std::vector<Scalar> generateScalar()const;
+    Scalar operator[](unsigned int index)const {return m_Vec[index];}
 };
