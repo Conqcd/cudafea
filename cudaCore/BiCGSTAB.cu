@@ -23,8 +23,4 @@ void Try()
 	// 	cudaMemcpy(model.image, model.dev_image, sizeof(DoubleColor) * model.height * model.width,cudaMemcpyDeviceToHost
 	// 	));
 
-
-	float Time_Elapse;
-
-	printf("time= %lf s FPS= %lf\n", Time_Elapse/1000, 1000 / Time_Elapse);
 }
