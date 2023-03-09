@@ -1,4 +1,5 @@
 #include "Vector.hpp"
+#include <cmath>
 #include <assert.h>
 
 Vector::Vector(idxType length)
@@ -35,7 +36,18 @@ void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scala
     }
 }
 
-std::vector<Scalar> Vector::generateScalar()
+double Vector::norm1()const
+{
+    double value = 0;
+    for (auto v:m_Vec)
+    {
+        value += v * v;
+    }
+    return std::sqrt(value);
+    // return 0;
+}
+
+std::vector<Scalar> Vector::generateScalar()const
 {
     return m_Vec;
 }

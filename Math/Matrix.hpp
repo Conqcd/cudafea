@@ -1,6 +1,7 @@
 #pragma once
 #include "../Common.hpp"
 #include "Vector.hpp"
+#include <assert.h>
 #include<vector>
 #include<map>
 
@@ -83,6 +84,10 @@ public:
     virtual void PreAllocation(idxType)override;
     virtual double index(idxType row,idxType col)const override;
 
+
+    inline const auto& getRow(idxType row)const {
+        assert(row < m_row && row >= 0);
+        return m_Mat[row];}
 
     virtual double operator[](unsigned int index)const override
     {
