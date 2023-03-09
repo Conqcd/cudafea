@@ -7,22 +7,31 @@
 #include<thrust/sort.h>
 #include<thrust/execution_policy.h>
 
+// #include"Math/BiCGSTABSolver.hpp"
+#include "BICGSTAB.cuh"
 
-void Try()
+__global__ void compute(int* a,int* b,int length)
+{
+	auto id = threadIdx.x + blockIdx.x * blockDim.x;
+	if(id >= length)
+		return;
+	b[id] = a[id] + 1;
+}
+
+void BiCGSTAB()
 {
 	
-	dim3 blockSize(16 ,16);
-	dim3 threadSize(16, 16);
+	dim3 blockSize(32 ,32);
+	dim3 threadSize(32, 32);
+	int* a,*b;
+	const int length = 4;
+	cudaMalloc((void**)&a, sizeof(int) * length);
+	cudaMalloc((void**)&b, sizeof(int) * length);
 	
-	
-	// GPU_Tracer << <blockSize, threadSize >> > (samples_per_pixel, model.dev_image,
-	//                                            background, model, depth, screen.camera,infinity);
-    // HANDLE_ERROR(cudaMalloc((void**)&dev_ids, sizeof(tinyobj::index_t) * 3 * numtri));
+	compute << <blockSize, threadSize >> > (a,b,length);
+	int bb[length];
 
-	// HANDLE_ERROR(
-	// 	cudaMemcpy(model.image, model.dev_image, sizeof(DoubleColor) * model.height * model.width,cudaMemcpyDeviceToHost
-	// 	));
-
+	cudaMemcpy(model.image, b, sizeof(int) * length,cudaMemcpyDeviceToHost);
 
 	float Time_Elapse;
 

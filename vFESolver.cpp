@@ -1,6 +1,7 @@
 //  solver class
 
 #include "vFESolver.hpp"
+#include "Math/BiCGSTABSolver.hpp"
 #include<chrono>
 #include<thread>
 
@@ -1243,38 +1244,30 @@ bool vFESolver::Solve(){
 
     printf("In solve \n");
     
-    // KSPCreate(comm, &ksp);
-    
-    printf("Created KSP \n");
+
+    BiCGSTABSolver solver;
     
     vFESolver::ComputeGSM(GSM);
     vFESolver::ComputeRHS(rhs);
     
-    // VecCreate(comm, &sol);
     
     vFESolver::AllocateLocalVec(sol);
     
-// #if PETSC_VERSION_LT(3,5,1)
-    // KSPSetOperators(ksp, GSM, GSM, DIFFERENT_NONZERO_PATTERN);
-// #else
-    // KSPSetOperators(ksp, GSM, GSM);
-// #endif
     
-    // KSPCG
     // KSPSetType(ksp,KSPCG);
-    // KSPGetPC(ksp,&prec);
     // PCSetType(prec,PCJACOBI);
     // KSPSetTolerances(ksp, TOLERANCE, PETSC_DEFAULT, PETSC_DEFAULT, MAXITER);
-
+    solver.setMaxIteration(MAXITER);
+    solver.setTolerance(TOLERANCE);
 	// KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
     
-    // KSPSetUp(ksp);
     
     printf("Starting solver...\n");
     
     auto startT = std::chrono::high_resolution_clock::now();
     
     // KSPSolve(ksp, rhs, sol);
+    solver.Solve(GSM,sol,rhs);
 
     auto endT = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
@@ -1283,6 +1276,8 @@ bool vFESolver::Solve(){
     printf("SOLVETIME = %.5le \n", static_cast<double>(duration.count()));
     
     // KSPGetSolution(ksp, &sol);
+    iters = solver.getIteration();
+    norm = solver.getResdualNorm();
     
     // KSPGetIterationNumber(ksp, &iters);
     // KSPGetResidualNorm(ksp, &norm);
