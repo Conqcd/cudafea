@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Matrix.hpp"
-// #include "cudaCore/BICGSTAB.cuh"
 
 class BiCGSTABSolver
 {

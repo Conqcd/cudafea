@@ -13,5 +13,5 @@ include_directories(${PROJECT_SOURCE_DIR}$)
 
 file(GLOB CUDASOURCES ./*.cu)
 
-cuda_add_library(core SHARED
+cuda_add_library(core STATIC
         ${CUDASOURCES})

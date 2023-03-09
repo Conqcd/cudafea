@@ -1331,11 +1331,6 @@ bool vFESolver::Solve(){
     // VecRestoreArray(vecout, &solution);
     solution = vecout.generateScalar();
     
-        
-    
-    // VecScatterDestroy(&vsctx);
-    
-    
     printf("Leaving Solve\n");
     
     SOLVE_DONE = true;
