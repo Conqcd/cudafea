@@ -6,7 +6,7 @@ class BiCGSTABSolver
 {
 private:
     int iteration_set,iteration_close;
-    float ResdualNorm;
+    double ResdualNorm;
     double tolerance;
 public:
     BiCGSTABSolver(/* args */);
@@ -15,7 +15,7 @@ public:
     void setMaxIteration(idxType);
     void setTolerance(double);
 
-    inline int getIteration()const {return iteration_close;}
-    inline float getResdualNorm()const {return ResdualNorm;}
+    inline auto getIteration()const {return iteration_close;}
+    inline auto getResdualNorm()const {return ResdualNorm;}
 };
 

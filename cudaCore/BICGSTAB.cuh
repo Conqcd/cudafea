@@ -1,4 +1,12 @@
 #pragma once
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+#include<thrust/host_vector.h>
+#include<thrust/device_vector.h>
+#include<thrust/copy.h>
+#include<thrust/sort.h>
+#include<thrust/execution_policy.h>
 
 #include "../Math/BiCGSTABSolver.hpp"
 
@@ -6,15 +14,25 @@ struct IndexValue
 {
     int colid;
     double value;
+    // __host__ __device__  IndexValue(){}
+    // __host__ __device__  ~IndexValue(){}
+    // __host__ __device__  IndexValue(const IndexValue& v){
+    //     colid = v.colid;
+    //     value = v.colid;
+    // }
+    // __host__ __device__ IndexValue operator=(const IndexValue& v)
+    // {
+    //     colid = v.colid;
+    //     value = v.colid;
+    //     return *this;
+    // }
 };
-
 class CudaVector
 {
 private:
-    int row;
-    double* values;
+    thrust::device_vector<Scalar> values;
 public:
-    CudaVector(int _row,const Vector& vec) : row(_row){AllocateData(vec);}
+    CudaVector(const Vector& vec) {AllocateData(vec);}
     ~CudaVector();
 protected:
     void AllocateData(const Vector&);
@@ -23,11 +41,10 @@ protected:
 class CudaSPVector
 {
 private:
-    int row;
-    int preA;
-    IndexValue* vec;
+    thrust::device_vector<idxType> row;
+    thrust::device_vector<Scalar> values;
 public:
-    CudaSPVector(int _row,const Vector& vec) : row(_row){AllocateData(vec);}
+    CudaSPVector(const Vector& vec) {AllocateData(vec);}
     ~CudaSPVector();
 protected:
     void AllocateData(const Vector&);
@@ -47,4 +64,4 @@ protected:
     void AllocateData(const SymetrixSparseMatrix&);
 };
 
-void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b);
+void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm);

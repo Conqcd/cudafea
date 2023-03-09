@@ -1,42 +1,31 @@
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include<thrust/host_vector.h>
-#include<thrust/device_vector.h>
-#include<thrust/copy.h>
-#include<thrust/sort.h>
-#include<thrust/execution_policy.h>
-
-#include<vector>
 #include "BICGSTAB.cuh"
+#include<vector>
+#include<iostream>
 
 CudaVector::~CudaVector()
 {
-	cudaFree(values);
 }
 
 void CudaVector::AllocateData(const Vector& vec)
 {
-	cudaMalloc((void**)&values, sizeof(double) * row);
-	cudaMemcpy(values, vec.generateScalar().data(), sizeof(double) * vec.size(),cudaMemcpyHostToDevice);
+	auto v = vec.generateScalar();
+	thrust::copy(v.begin(),v.end(),values.begin());
 }
 
 CudaSPVector::~CudaSPVector()
 {
-	cudaFree(vec);
 }
 
 void CudaSPVector::AllocateData(const Vector& vector)
 {
-	std::vector<IndexValue> vv;
+	std::vector<idxType> ii;
+	std::vector<Scalar> vv;
 	for (int i = 0; i < vector.size(); i++)
 	{
 		if(vector[i] != 0)
-			vv.push_back({i,vector[i]});
+			ii.push_back(i),vv.push_back(vector[i]);
 	}
 	
-	cudaMalloc((void**)&vec, sizeof(IndexValue) * vv.size());
-	cudaMemcpy(vec, vv.data(), sizeof(IndexValue) * vv.size(),cudaMemcpyHostToDevice);
 }
 
 CudaSPMatrix::~CudaSPMatrix()
@@ -46,11 +35,15 @@ CudaSPMatrix::~CudaSPMatrix()
 		cudaFree(matrix[i]);
 	}
 	cudaFree(dev_matrix);
+	cudaFree(preA);
+	delete[] matrix;
 }
 
 void CudaSPMatrix::AllocateData(const SymetrixSparseMatrix& mat)
 {
 	matrix = new IndexValue*[row];
+	auto prea = new int[row];
+	cudaMalloc((void**)&preA, sizeof(int) * row);
 	for (int i = 0; i < row; i++)
 	{
 		std::vector<IndexValue> vv;
@@ -59,38 +52,55 @@ void CudaSPMatrix::AllocateData(const SymetrixSparseMatrix& mat)
 			if(kv.second != 0 && kv.first >= row)
 				vv.push_back({(int)kv.first,kv.second});
 		}
+		prea[i] = vv.size();
 		cudaMalloc((void**)&matrix[i], sizeof(IndexValue) * vv.size());
 		cudaMemcpy(matrix[i], vv.data(), sizeof(IndexValue) * vv.size(),cudaMemcpyHostToDevice);
 	}
-	
+	cudaMemcpy(preA, prea, sizeof(int) * row,cudaMemcpyHostToDevice);
+	delete []prea;
 	cudaMalloc((void**)&dev_matrix, sizeof(IndexValue*) * row);
 	cudaMemcpy(dev_matrix, matrix, sizeof(IndexValue*) * row,cudaMemcpyHostToDevice);
 }
 
-__global__ void compute(int* a,int* b,int length)
+__global__ void compute(thrust::pair<int,double>* a,int length)
 {
 	auto id = threadIdx.x + blockIdx.x * blockDim.x;
 	if(id >= length)
 		return;
 	// b[id] = a[id] + 1;
 	// b[id] = 1;
-	printf("asdas");
+	a[id].first = id + 3;
+	a[id].second = id + 2;
 }
 
-void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b)
+void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm)
 {
-	
-	dim3 blockSize(32 ,32);
-	dim3 threadSize(32, 32);
-	int* a,*b2;
-	const int length = 4;
-	cudaMalloc((void**)&a, sizeof(int) * length);
-	cudaMalloc((void**)&b2, sizeof(int) * length);
-	
-	compute << <blockSize, threadSize >> > (a,b2,length);
-	int bb[length];
+	int bs = std::sqrt(A.get_row());
+	int th = (A.get_row() / bs * bs == A.get_row()) ?  A.get_row() / bs : A.get_row() / bs+ 1;
+	dim3 blockSize(bs);
+	dim3 threadSize(th);
+	double rho0,w,alpha,rho1;
+	rho0 = w = alpha = 1.0;
+	thrust::device_vector<Scalar> r(b.begin(),b.end()),r_hat = r,v(b.size()),p(b.size()),temp(b.size());
+	thrust::host_vector<Scalar> vec3 = r;
+	// for (int i = 0; i < vec3.size(); i++)
+	// {
+	// 	std::cout << vec3[i] << " " << vec3[i] << std::endl;
+	// }
+	rho1 = thrust::reduce(r.begin(),r.end());
+	iter = 0;
+	norm = 1000;
+	double normb = b.norm1();;
+	while(iter < limit && norm > tolerance * normb)
+	{
+		double beta = rho1 / rho0 * alpha / w;
 
-	cudaMemcpy(bb, b2, sizeof(int) * length,cudaMemcpyDeviceToHost);
-	cudaFree(a);
-	cudaFree(b2);
+		iter++;
+	}
+	// compute<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&vec[0]),vec.size());
+	// vec3 = r;
+	for (int i = 0; i < vec3.size(); i++)
+	{
+		std::cout << vec3[i] << vec3[i] << std::endl;
+	}
 }
