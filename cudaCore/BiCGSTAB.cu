@@ -77,20 +77,20 @@ __global__ void compute(int* a,int* b,int length)
 	printf("asdas");
 }
 
-void BiCGSTAB()
+void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b)
 {
 	
 	dim3 blockSize(32 ,32);
 	dim3 threadSize(32, 32);
-	int* a,*b;
+	int* a,*b2;
 	const int length = 4;
 	cudaMalloc((void**)&a, sizeof(int) * length);
-	cudaMalloc((void**)&b, sizeof(int) * length);
+	cudaMalloc((void**)&b2, sizeof(int) * length);
 	
-	compute << <blockSize, threadSize >> > (a,b,length);
+	compute << <blockSize, threadSize >> > (a,b2,length);
 	int bb[length];
 
-	cudaMemcpy(bb, b, sizeof(int) * length,cudaMemcpyDeviceToHost);
+	cudaMemcpy(bb, b2, sizeof(int) * length,cudaMemcpyDeviceToHost);
 	cudaFree(a);
-	cudaFree(b);
+	cudaFree(b2);
 }

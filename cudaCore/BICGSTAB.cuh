@@ -47,4 +47,4 @@ protected:
     void AllocateData(const SymetrixSparseMatrix&);
 };
 
-void BiCGSTAB();
+void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b);

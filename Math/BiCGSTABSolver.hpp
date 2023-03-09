@@ -11,7 +11,7 @@ private:
 public:
     BiCGSTABSolver(/* args */);
     ~BiCGSTABSolver();
-    void Solve(const Matrix&,Vector&,const Vector&);
+    void Solve(const SymetrixSparseMatrix&,Vector&,const Vector&);
     void setMaxIteration(idxType);
     void setTolerance(double);
 
