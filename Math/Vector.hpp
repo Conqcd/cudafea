@@ -16,6 +16,7 @@ public:
     void destroy();
     void fill(double);
     void setvalues(const std::vector<idxType>&,const std::vector<Scalar>&);
+    void setvalues(const std::vector<Scalar>&);
     double norm1()const;
 
     std::vector<Scalar> generateScalar()const;

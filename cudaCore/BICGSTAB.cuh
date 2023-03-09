@@ -54,10 +54,10 @@ class CudaSPMatrix
 {
 private:
     int row,col;
-    int* preA;
     IndexValue** matrix;
-    IndexValue** dev_matrix;
 public:
+    int* preA;
+    IndexValue** dev_matrix;
     CudaSPMatrix(int _row,int _col,const SymetrixSparseMatrix& mat) : row(_row),col(_col){AllocateData(mat);}
     ~CudaSPMatrix();
 protected:

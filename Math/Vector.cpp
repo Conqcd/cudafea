@@ -36,6 +36,11 @@ void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scala
     }
 }
 
+void Vector::setvalues(const std::vector<Scalar>& valvec)
+{
+    m_Vec = valvec;
+}
+
 double Vector::norm1()const
 {
     double value = 0;
