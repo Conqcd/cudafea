@@ -113,20 +113,9 @@ void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tol
 	dim3 threadSize(32);
 	Scalar rho0,w,alpha,rho1;
 	rho0 = w = alpha = 1.0;
-<<<<<<< HEAD
-	thrust::device_vector<Scalar> r(b.begin(),b.end()),r_hat = r,v(b.size()),p(b.size()),temp(b.size());
-	thrust::host_vector<Scalar> vec3 = r;
-	// for (int i = 0; i < vec3.size(); i++)--
-	
-	// {
-	// 	std::cout << vec3[i] << " " << vec3[i] << std::endl;
-	// }
-	rho1 = thrust::reduce(r.begin(),r.end());
-=======
+
 	CudaSPMatrix cspm(A.get_row(),A.get_col(),A);
 	thrust::device_vector<Scalar> r(b.begin(),b.end()),xx(b.size()),r_hat = r,v(b.size()),p(b.size()),s(b.size()),t(b.size()),temp(b.size());
-
->>>>>>> 0ebf6ca0fe0669373ec64d4fbffec72b4f299699
 	iter = 0;
 	norm = 1000;
 	double normb = b.norm1();
