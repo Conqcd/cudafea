@@ -234,6 +234,8 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 
 		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&z[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,z.size());
 
+
+		// thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		thrust::transform(thrust::device,r.begin(),r.end(),z.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		rr1 = thrust::reduce(thrust::device,temp.begin(),temp.end());
 
