@@ -83,7 +83,8 @@ void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tol
 	rho0 = w = alpha = 1.0;
 	thrust::device_vector<Scalar> r(b.begin(),b.end()),r_hat = r,v(b.size()),p(b.size()),temp(b.size());
 	thrust::host_vector<Scalar> vec3 = r;
-	// for (int i = 0; i < vec3.size(); i++)
+	// for (int i = 0; i < vec3.size(); i++)--
+	
 	// {
 	// 	std::cout << vec3[i] << " " << vec3[i] << std::endl;
 	// }
