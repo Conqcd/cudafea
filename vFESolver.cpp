@@ -1,7 +1,7 @@
 //  solver class
 
 #include "vFESolver.hpp"
-#include "Math/BiCGSTABSolver.hpp"
+#include "Math/Solver.hpp"
 #include<chrono>
 #include<thread>
 
@@ -1245,7 +1245,7 @@ bool vFESolver::Solve(){
     printf("In solve \n");
     
 
-    BiCGSTABSolver solver;
+    Solver solver;
     
     vFESolver::ComputeGSM(GSM);
     vFESolver::ComputeRHS(rhs);
@@ -1304,7 +1304,7 @@ bool vFESolver::Solve(){
 
     // VecGetArray(vecout, &solution);
     vecout.reset(sol.size());
-    solution = vecout.generateScalar();
+    solution = sol.generateScalar();
     
     int vsize;
     vsize = vecout.size();
@@ -1329,7 +1329,7 @@ bool vFESolver::Solve(){
     }// for each node in Node Set
     
     // VecRestoreArray(vecout, &solution);
-    solution = vecout.generateScalar();
+    // solution = vecout.generateScalar();
     
     printf("Leaving Solve\n");
     

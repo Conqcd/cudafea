@@ -8,7 +8,7 @@
 #include<thrust/sort.h>
 #include<thrust/execution_policy.h>
 
-#include "../Math/BiCGSTABSolver.hpp"
+#include "../Math/Solver.hpp"
 
 struct IndexValue
 {
@@ -63,5 +63,7 @@ public:
 protected:
     void AllocateData(const SymetrixSparseMatrix&);
 };
+
+void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm);
 
 void BiCGSTAB(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm);
