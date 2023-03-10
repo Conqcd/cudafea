@@ -84,6 +84,8 @@ public:
     virtual void PreAllocation(idxType)override;
     virtual double index(idxType row,idxType col)const override;
 
+    SymetrixSparseMatrix inverse()const;
+    SymetrixSparseMatrix ichol()const;
 
     inline const auto& getRow(idxType row)const {
         assert(row < m_row && row >= 0);

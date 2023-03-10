@@ -1,4 +1,5 @@
 #include "Matrix.hpp"
+#include <cmath>
 #include <assert.h>
 
 DenseMatrix::DenseMatrix()
@@ -154,16 +155,16 @@ void SymetrixSparseMatrix::insert(idxType row,idxType col,double value)
 {
     if(m_Mat[row].count(col) == 0)
     {
-        assert(m_Mat[row].size() <= preA);
+        assert(m_Mat[row].size() < preA);
     }
-    m_Mat[row][col] += value;
+    m_Mat[row][col] = value;
 }
 
 void SymetrixSparseMatrix::add(idxType row,idxType col,double value)
 {
     if(m_Mat[row].count(col) == 0)
     {
-        assert(m_Mat[row].size() <= preA);
+        assert(m_Mat[row].size() < preA);
         m_Mat[row][col] = value;
     }else
     {
@@ -249,6 +250,48 @@ double SymetrixSparseMatrix::index(idxType row,idxType col)const
     if(m_Mat[row].count(col) == 0)
         return 0;
     return m_Mat[row].at(col);
+}
+SymetrixSparseMatrix SymetrixSparseMatrix::inverse()const
+{
+    SymetrixSparseMatrix mat(m_row,m_col);
+    mat.PreAllocation(preA);
+    for (int i = 0; i < m_col; i++)
+    {
+        mat.insert(i,i,1 / index(i,i));
+        for (int j = 0; j < i; j++)
+        {
+            Scalar s = 0;
+            for (int k = j; k < i; k++)
+            {
+                s = s + index(i,k) * mat.index(k,j);
+            }
+            mat.insert(i,j,-s * mat.index(i, i));
+        }
+    }
+    return mat;
+}
+
+SymetrixSparseMatrix SymetrixSparseMatrix::ichol()const
+{
+    auto mat = *this;
+    
+    mat.PreAllocation(preA);
+    for (int k = 0; k < m_col; k++)
+    {
+        mat.insert(k,k,std::sqrt(mat.index(k,k)));
+        
+        for (int i = k + 1; i < m_col; i++)
+            if(mat.index(i,k) != 0)
+                mat.insert(i,k,mat.index(i,k) / mat.index(k,k));
+        for (int j = k + 1; j < m_col; j++)
+            for (int i = j; i < m_col; i++)
+                if (mat.index(i,j) != 0)
+                    mat.insert(i,j,mat.index(i,j) - mat.index(i,k) * mat.index(j,k));
+    }
+    for (int i = 0; i < m_col; i++)
+        for (int j = i + 1; j < m_col; j++)
+            mat.insert(i,j,0);
+    return mat;
 }
 
 namespace Math
