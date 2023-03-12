@@ -212,6 +212,7 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 
 	MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&z[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,z.size());
 	p = z;
+	std::vector<Scalar> tempp{z.begin(),z.end()};
 	iter = 0;
 	thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
 	norm = 1000;
@@ -224,16 +225,19 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 	{
 		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&w[0]),thrust::raw_pointer_cast(&p[0]),cspm.dev_matrix,cspm.preA,Ap.size());
 
+		std::vector<Scalar> tempp{w.begin(),w.end()};
 		thrust::transform(thrust::device,p.begin(),p.end(),w.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		alpha = rr0 / thrust::reduce(thrust::device,temp.begin(),temp.end());
 
 		computeX_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&xx[0]),thrust::raw_pointer_cast(&p[0]),xx.size(),alpha);
-		std::vector<Scalar> tempp{xx.begin(),xx.end()};
+		tempp = {xx.begin(),xx.end()};
 
 		lastr = r;
 		computeR_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&w[0]),r.size(),alpha);
+		tempp = {r.begin(),r.end()};
 
 		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&z[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,z.size());
+		tempp = {z.begin(),z.end()};
 
 
 		thrust::transform(thrust::device,r.begin(),r.end(),lastr.begin(),temp.begin(),thrust::minus<Scalar>());
@@ -241,9 +245,12 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 		rr1 = thrust::reduce(thrust::device,temp.begin(),temp.end());
 
 		beta = rr1 / rr0;
-		rr0 = rr1;
+		thrust::transform(thrust::device,r.begin(),r.end(),z.begin(),temp.begin(),thrust::multiplies<Scalar>());
+		rr0 = thrust::reduce(thrust::device,temp.begin(),temp.end());
+		// rr0 = rr1;
 
 		computeP_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&z[0]),p.size(),beta);
+		tempp = {p.begin(),p.end()};
 
 		iter++;
 		thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
