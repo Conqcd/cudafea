@@ -255,7 +255,7 @@ SymetrixSparseMatrix SymetrixSparseMatrix::inverse()const
 {
     SymetrixSparseMatrix mat(m_row,m_col);
     mat.PreAllocation(preA);
-    for (int i = 0; i < m_col; i++)
+    for (int i = 0; i < m_row; i++)
     {
         mat.insert(i,i,1 / index(i,i));
         for (int j = 0; j < i; j++)
@@ -276,7 +276,7 @@ SymetrixSparseMatrix SymetrixSparseMatrix::ichol()const
     auto mat = *this;
     
     mat.PreAllocation(preA);
-    for (int k = 0; k < m_col; k++)
+    for (int k = 0; k < m_row; k++)
     {
         mat.insert(k,k,std::sqrt(mat.index(k,k)));
         
@@ -288,7 +288,7 @@ SymetrixSparseMatrix SymetrixSparseMatrix::ichol()const
                 if (mat.index(i,j) != 0)
                     mat.insert(i,j,mat.index(i,j) - mat.index(i,k) * mat.index(j,k));
     }
-    for (int i = 0; i < m_col; i++)
+    for (int i = 0; i < m_row; i++)
         for (int j = i + 1; j < m_col; j++)
             mat.insert(i,j,0);
     return mat;
