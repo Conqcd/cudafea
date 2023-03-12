@@ -47,7 +47,7 @@ void LocalStiffnessMatrix::create(const std::vector<GradientMatrix>& gradientMtx
     DenseMatrix LSM(lsmlen,lsmlen), propXgradMtx, tempMtx;
     
     // Build Property Matrix
-    PropertyMatrix propMtx(youngsm, poissonsr);
+    propMtx = {youngsm, poissonsr};
     
     
     // assuming all 8 gradient matrices are available
@@ -65,7 +65,6 @@ void LocalStiffnessMatrix::create(const std::vector<GradientMatrix>& gradientMtx
 
     //ierr = MatScale(LSM, 0.125 * a * b * c); CHKERRQ(ierr);
     //ierr = MatScale(LSM, 1.0/1.1); CHKERRQ(ierr);
-    //MatView(LSM, PETSC_VIEWER_STDOUT_WORLD);
     // Get LSM
     matrix = LSM;
     // MatDenseGetArray(LSM, (&matrix));

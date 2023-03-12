@@ -102,6 +102,9 @@ public:
     bool CONSTRAINTS_DONE;
   
     bool SOLVE_DONE;
+    bool DISPLACEMENT_DONE;
+    bool STRAIN_DONE;
+    bool STRESS_DONE;
     bool FINISH_DONE;
     
     char data[MAX_DATA_LENGTH];
@@ -162,6 +165,10 @@ public:
     //================ Output
     
     bool PrintDisplacements(const char *filename);
+
+    bool PrintStrain(const char *filename);
+
+    bool PrintStress(const char *filename);
     
     //================= Add / Remove / Set
     
@@ -236,6 +243,10 @@ protected:
     
     // COLLECTIVE
     bool ComputeRHS(Vector& rhs);
+
+    bool ComputeStrain();
+
+    bool ComputeStress();
     
     //================ Allocate Local Rows / Columns (matrix / vec)
     

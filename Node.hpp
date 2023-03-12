@@ -15,6 +15,9 @@ template<typename T> class Node
 public:
     T           x,y,z;      // coordinates
     double      dx, dy, dz; // displacements
+    double      yx, yy, yz; // strain
+    double      fx, fy, fz; // stress
+    int ct = 0;
     idxType     idx;        // index
     Constraint<T>*    constraint; // constraint pointer
     Element<T>*    elems[NODES_PER_ELEMENT];

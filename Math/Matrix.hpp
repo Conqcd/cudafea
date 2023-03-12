@@ -8,7 +8,8 @@
 template<typename T>
 using IdVal = std::pair<idxType,T>;
 
-//defaut symatric
+
+class Vector;
 class Matrix
 {
 protected:
@@ -34,6 +35,7 @@ public:
     inline idxType get_row()const {return m_row;}
     inline idxType get_col()const {return m_col;}
     virtual double operator[](unsigned int index)const = 0;
+    friend Vector operator*(const Matrix& m, const Vector& vec);
 };
 class DenseMatrix :public Matrix
 {
@@ -95,10 +97,13 @@ public:
     {
         return m_Mat[index / m_col].at(index % m_col);
     }
+    // SymetrixSparseMatrix operator *(const Matrix& m);
 };
+Vector operator*(const Matrix& matrix,const Vector& vec);
 namespace Math
 {
 
 DenseMatrix transpose(const DenseMatrix& m);
+
 
 }

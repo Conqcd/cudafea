@@ -32,6 +32,8 @@ enum {  CMD_SET_SCRIPT_VERSION,
         CMD_SOLVE,
 		CMD_GET_FORCE,
         CMD_PRINT_DISPLACEMENTS, 
+        CMD_PRINT_STRAIN, 
+        CMD_PRINT_STRESS, 
         CMD_FINISH };
 
 

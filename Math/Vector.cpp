@@ -26,6 +26,15 @@ void Vector::fill(double value)
     std::fill(m_Vec.begin(),m_Vec.end(),value);
 }
 
+Vector& Vector::scale(double s)
+{
+    for (auto& v:m_Vec)
+    {
+        v *= s;
+    }
+    return *this;
+}
+
 void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scalar>& valvec)
 {
     assert(idvec.size() == valvec.size());
@@ -34,6 +43,11 @@ void Vector::setvalues(const std::vector<idxType>& idvec,const std::vector<Scala
     {
         m_Vec[id] = valvec[i++];
     }
+}
+
+void Vector::setvalue(idxType id,Scalar value)
+{
+    m_Vec[id] = value;
 }
 
 void Vector::setvalues(const std::vector<Scalar>& valvec)
@@ -55,4 +69,22 @@ double Vector::norm1()const
 std::vector<Scalar> Vector::generateScalar()const
 {
     return m_Vec;
+}
+
+Vector& Vector::operator+=(const Vector& v)
+{
+    for (int i = 0;i < m_Vec.size();i++)
+    {
+        m_Vec[i] += v[i];
+    }
+    return *this;
+}
+
+Vector& Vector::operator-=(const Vector& v)
+{
+    for (int i = 0;i < m_Vec.size();i++)
+    {
+        m_Vec[i] -= v[i];
+    }
+    return *this;
 }

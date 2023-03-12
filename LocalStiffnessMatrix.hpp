@@ -19,6 +19,7 @@ public:
     
     
     DenseMatrix matrix; // local stiffness matrix
+    PropertyMatrix propMtx; // D matrix
     
     LocalStiffnessMatrix();
     LocalStiffnessMatrix(const double a, const double b, const double c, const double ym, const double pr);

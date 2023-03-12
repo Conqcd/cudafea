@@ -653,7 +653,7 @@ bool vFESolver::PrintDisplacements(const char *filename)
 			fprintf(outFile, "%d   %d   %d   %d   %.9le   %.9le   %.9le  \n", globalID, nx, ny, nz, dx, dy, dz);
         }// for each node in Node Set
         fclose(outFile);
-
+        DISPLACEMENT_DONE = true;
         OK = true;
     }
     catch(std::exception &e)
@@ -661,12 +661,126 @@ bool vFESolver::PrintDisplacements(const char *filename)
         printf("ERROR: could not print displacements \n");
         fclose(outFile);
         OK = false;
+        DISPLACEMENT_DONE = false;
         return OK;
     }
-    return ( OK );
+    return (OK);
     
 } // PrintDisplacements()
 
+bool vFESolver::PrintStrain(const char *filename)
+{
+    // get strains from node and output 
+    
+    strcpy(OUTPUTFILE, filename);
+    
+    bool OK(false);
+    idxType globalID;
+    
+    xyzType nx, ny, nz;
+    Scalar dx, dy, dz;
+    FILE * outFile;
+    NodeSet_it nitr;
+
+    ComputeStrain();
+
+    try
+    {
+        outFile = fopen(filename,"w");
+        if(outFile != NULL){
+            
+            printf("output file is open for strains\n");
+        }else{
+            printf("ERROR: output file NULL\n");
+            return OK;
+        }
+        
+        fprintf(outFile,"nNodes: %d\n", NodeS.size());
+        fprintf(outFile,"Nodes: %d  %d  %d\n", NX, NY, NZ);
+        fprintf(outFile,"Materials: %s\n", MATERIALSFILE);
+        
+        for (nitr = NodeS.begin(); nitr != NodeS.end(); ++nitr)
+        {
+            nx = (*nitr)->x;
+            ny = (*nitr)->y;
+            nz = (*nitr)->z;
+            dx = (*nitr)->dx;
+            dy = (*nitr)->dy;
+            dz = (*nitr)->dz;
+            globalID = (*nitr)->idx;
+      
+			fprintf(outFile, "%d   %d   %d   %d   %.9le   %.9le   %.9le  \n", globalID, nx, ny, nz, dx, dy, dz);
+        }// for each node in Node Set
+        fclose(outFile);
+
+        OK = true;
+    }
+    catch(std::exception &e)
+    {
+        printf("ERROR: could not print strains \n");
+        fclose(outFile);
+        OK = false;
+        return OK;
+    }
+    return (OK);
+}
+
+bool vFESolver::PrintStress(const char *filename)
+{
+    // get strsses from node and output 
+    
+    strcpy(OUTPUTFILE, filename);
+    
+    bool OK(false);
+    idxType globalID;
+    
+    xyzType nx, ny, nz;
+    Scalar dx, dy, dz;
+    FILE * outFile;
+    NodeSet_it nitr;
+    
+    ComputeStress();
+
+    try
+    {
+        outFile = fopen(filename,"w");
+        if(outFile != NULL){
+            
+            printf("output file is open for strsses\n");
+        }else{
+            printf("ERROR: output file NULL\n");
+            return OK;
+        }
+        
+        fprintf(outFile,"nNodes: %d\n", NodeS.size());
+        fprintf(outFile,"Nodes: %d  %d  %d\n", NX, NY, NZ);
+        fprintf(outFile,"Materials: %s\n", MATERIALSFILE);
+        
+        for (nitr = NodeS.begin(); nitr != NodeS.end(); ++nitr)
+        {
+            nx = (*nitr)->x;
+            ny = (*nitr)->y;
+            nz = (*nitr)->z;
+            dx = (*nitr)->dx;
+            dy = (*nitr)->dy;
+            dz = (*nitr)->dz;
+            globalID = (*nitr)->idx;
+      
+			fprintf(outFile, "%d   %d   %d   %d   %.9le   %.9le   %.9le  \n", globalID, nx, ny, nz, dx, dy, dz);
+        }// for each node in Node Set
+        fclose(outFile);
+
+        OK = true;
+    }
+    catch(std::exception &e)
+    {
+        printf("ERROR: could not print strsses \n");
+        fclose(outFile);
+        OK = false;
+        return OK;
+    }
+    return (OK);
+}
 
 //==================== Adders
 
@@ -1218,7 +1332,60 @@ bool vFESolver::ComputeRHS(Vector& rhs){
     
 }// ComputeRHS()
 
+bool vFESolver::ComputeStrain()
+{
+    if(!DISPLACEMENT_DONE) return false;
+    STRAIN_DONE = true;
+    for (auto eitr = ElemS.begin(); eitr != ElemS.end(); ++eitr)
+    {
+        Vector strain_gauss[SAMPLES_PER_ELEMENT],stress_gauss[SAMPLES_PER_ELEMENT];
+        Vector strain[NODES_PER_ELEMENT],stress[NODES_PER_ELEMENT];
+        Vector d(NODES_PER_ELEMENT * 3);
+        for (int i = 0; i < NODES_PER_ELEMENT; i++)
+        {
+            auto node = (*eitr)->nodes[i];
+            d.setvalue(i * 3 + 0,node->dx);
+            d.setvalue(i * 3 + 1,node->dy);
+            d.setvalue(i * 3 + 2,node->dz);
+        }
+        Vector strain_Gavg(6),stress_Gavg(6);
+        for (int i = 0; i < SAMPLES_PER_ELEMENT; i++)
+        {
+            strain_gauss[i] = gradientMtx[i].getmat() * d;
+            strain_Gavg += strain_gauss[i];
+            // strain_gauss[i].scale(gradientMtx[i].getJdet());
+            stress_gauss[i] = MateM[(*eitr)->material].lsm.propMtx.getmat() * strain_gauss[i];
+            stress_Gavg += stress_gauss[i];
+            // stress[i] = stress_gauss[i];
+        }
+        strain_Gavg.scale(1.0 / SAMPLES_PER_ELEMENT);
+        stress_Gavg.scale(1.0 / SAMPLES_PER_ELEMENT);
+        for (int i = 0; i < NODES_PER_ELEMENT; i++)
+        {
+            strain[i] = (strain_gauss[i] - strain_Gavg).scale(2 * sqrt(3)) + strain_Gavg;
+            stress[i] = (stress_gauss[i] - stress_Gavg).scale(2 * sqrt(3)) + stress_Gavg;
+            auto node = (*eitr)->nodes[i];
+            node->ct++;
+            node->yx;
+            node->yy;
+            node->yz;
+            node->fx;
+            node->fy;
+            node->fz;
+        }
+        int i = 0;
+    }// for each node in Node Set
+    return STRAIN_DONE;
+}
 
+bool vFESolver::ComputeStress()
+{
+    if(!STRAIN_DONE) return false;
+
+    STRESS_DONE = true;
+    return STRESS_DONE;
+}
+ 
 
 //========== Solve
 

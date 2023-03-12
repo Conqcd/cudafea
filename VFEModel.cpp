@@ -61,6 +61,9 @@ void VFEModel::create_command_map()
     
     CommandM["PRINT_DISPLACEMENTS"] = CMD_PRINT_DISPLACEMENTS;
     CommandM["PRINT_X"] = CMD_PRINT_DISPLACEMENTS;
+
+    CommandM["PRINT_STRAIN"] = CMD_PRINT_STRAIN;
+    CommandM["PRINT_STRESS"] = CMD_PRINT_STRESS;
     
     CommandM["FINISH"] = CMD_FINISH; // not specified in script
 }// create_command_map()
@@ -453,6 +456,43 @@ bool VFEModel::execute_command(int command)
             else
             {
                 printf("ERROR: cannot print displacements before solving! \n");
+                OK = false;
+            }
+            
+            break;
+        }
+        case CMD_PRINT_STRAIN : // PRINT DISPLACEMENTS
+        {
+            // only MASTER process prints displacements (for now)
+            if(solver.SOLVE_DONE)
+            {
+                char outputfn[MAX_FILENAME_LENGTH];
+                OK = (sscanf(data, " %s \n", &outputfn) == 1);
+                if(OK)
+                    OK = solver.PrintStrain(outputfn);
+            
+            }// if solve done
+            else
+            {
+                printf("ERROR: cannot print strains before solving! \n");
+                OK = false;
+            }
+            break;
+        }
+        case CMD_PRINT_STRESS : // PRINT DISPLACEMENTS
+        {
+            // only MASTER process prints displacements (for now)
+            if(solver.SOLVE_DONE)
+            {
+                char outputfn[MAX_FILENAME_LENGTH];
+                OK = (sscanf(data, " %s \n", &outputfn) == 1);
+                if(OK)
+                    OK = solver.PrintStress(outputfn);
+            
+            }// if solve done
+            else
+            {
+                printf("ERROR: cannot print stresses before solving! \n");
                 OK = false;
             }
             

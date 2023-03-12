@@ -127,6 +127,8 @@ double DenseMatrix::index(idxType row,idxType col)const
     return m_Mat[row][col];
 }
 
+
+
 SymetrixSparseMatrix::SymetrixSparseMatrix()
                     : preA(0)
 {
@@ -293,6 +295,23 @@ SymetrixSparseMatrix SymetrixSparseMatrix::ichol()const
             mat.insert(i,j,0);
     return mat;
 }
+    
+Vector operator*(const Matrix& matrix,const Vector& vec)
+{
+    Vector vec2(matrix.get_row());
+    for (int i = 0; i < matrix.get_row(); i++)
+    {
+        double v = 0;
+        for (int j = 0; j < matrix.get_col(); j++)
+        {
+            v += matrix.index(i,j) * vec[j];
+        }
+        
+        vec2.setvalue(i,v);
+    }
+    
+    return vec2;
+}
 
 namespace Math
 {
@@ -309,5 +328,6 @@ DenseMatrix transpose(const DenseMatrix& m)
     }
     return res;
 }
-    
+
+
 } // namespace Math
