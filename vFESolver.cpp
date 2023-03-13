@@ -1344,13 +1344,89 @@ void PrintMatrix(const Matrix& mat)
     
 }
 
+void ComputeB(std::vector<DenseMatrix>& Bs)
+{
+    
+    const Scalar b[SAMPLES_PER_ELEMENT][6][24] = {
+        -1	,0	,0	,1	,0	,0	,0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0	,-1,	0	,0	,0	,0	,0	,1	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0,	0,
+        0	,0	,-1	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,1	,0	,0	,0	,0	,0	,0	,0	,0,	0,
+        -1,	-1,	0	,0	,1	,0	,1	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0,	0,
+        0	,-1	,-1	,0	,0	,0	,0	,0	,1	,0	,0	,0	,0	,1	,0	,0	,0	,0	,0	,0	,0	,0	,0,	0,
+        -1,	0	,-1	,0	,0	,1	,0	,0	,0	,0	,0	,0	,1	,0	,0	,0	,0	,0	,0	,0	,0	,0	,0,	0,
+        
+        -1,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0	,0,	0,	0,	-1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0	,0,	0,	0,	0	,-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,
+        0	,-1,	0,	-1,	1,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0	,0,	0,	0,	-1	,-1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,
+        0	,0,	-1,	-1,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,
+
+        0	,0,	0,	0,	0,	0,	-1,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0	,-1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0	,0,	0,	0,	0,	0,	0	,0	,-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,
+        -1,	0,	0,	0,	0,	0,	1	,-1,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0	,0,	-1,	0,	0,	0,	0	,-1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,
+        0	,0,	0,	0,	0,	0,	-1	,0	,-1,	0,	0,	1,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,
+
+        0,	0,	0,	0,	0,	0,	-1,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,
+        0,	0,	0,	-1,	0,	0,	0,	-1,	0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	-1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	-1,	-1,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,
+
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,
+        0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	-1,	0,	0,	1,	0,	1,	0,	0,	0,	0,	0,
+        0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	-1,	0,	0,	0,	0,	0,	1,	0,	0,	0,
+        -1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	-1,	0,	0,	1,	0,	0,	0,	0,	0,	0,
+
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	1,	0,
+        0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	-1,	1,	0,	0,	0,	0,	1,	0,	0,
+        0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	-1,	0,	0,	0,	0,	0,	1,
+        0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	1,	0,	1,	0,	0,	0,	0,	0,	0,
+
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	1,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	1,	-1,	0,	0,	1,	0,
+        0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	1,	1,	0,	0,	0,
+        0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	-1,	0,	0,	1,
+
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	1,	0,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	1,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	-1,	0,	1,	1,	0,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	1,	1,
+        0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	-1,	1,	0,	1,
+    };
+    for (int i = 0; i < SAMPLES_PER_ELEMENT; i++)
+    {
+        for (int j = 0; j < Bs[i].get_row(); j++)
+        {
+            for (int k = 0; k < Bs[i].get_col(); k++)
+            {
+                Bs[i].insert(j,k,b[i][j][k]);
+            }
+        }
+    }
+    
+}
+
 bool vFESolver::ComputeStrainAndStrss()
 {
     if(!DISPLACEMENT_DONE) return false;
     STRAIN_DONE = true;
+    std::vector<DenseMatrix> Bs(NODES_PER_ELEMENT,{6,24});
+    ComputeB(Bs);
+
     for (auto eitr = ElemS.begin(); eitr != ElemS.end(); ++eitr)
     {
-        Vector strain_gauss[SAMPLES_PER_ELEMENT],stress_gauss[SAMPLES_PER_ELEMENT];
+        // Vector strain_gauss[SAMPLES_PER_ELEMENT],stress_gauss[SAMPLES_PER_ELEMENT];
         Vector strain[NODES_PER_ELEMENT],stress[NODES_PER_ELEMENT];
         Vector d(NODES_PER_ELEMENT * 3);
         for (int i = 0; i < NODES_PER_ELEMENT; i++)
@@ -1363,21 +1439,20 @@ bool vFESolver::ComputeStrainAndStrss()
         Vector strain_Gavg(6),stress_Gavg(6);
         for (int i = 0; i < SAMPLES_PER_ELEMENT; i++)
         {
-            strain_gauss[i] = gradientMtx[i].getmat() * d;
-            PrintMatrix(gradientMtx[i].getmat());
-            strain_Gavg += strain_gauss[i];
+            // strain_gauss[i] = gradientMtx[i].getmat() * d;
+            strain[i] = Bs[i] * d;
+            // PrintMatrix(gradientMtx[i].getmat());
+            // strain_Gavg += strain_gauss[i];
             // strain_gauss[i].scale(gradientMtx[i].getJdet());
-            stress_gauss[i] = MateM[(*eitr)->material].lsm.propMtx.getmat() * strain_gauss[i];
+            stress[i] = MateM[(*eitr)->material].lsm.propMtx.getmat() * strain[i];
             // PrintMatrix(MateM[(*eitr)->material].lsm.propMtx.getmat());
-            stress_Gavg += stress_gauss[i];
+            // stress_Gavg += stress_gauss[i];
             // stress[i] = stress_gauss[i];
         }
-        strain_Gavg.scale(1.0 / SAMPLES_PER_ELEMENT);
-        stress_Gavg.scale(1.0 / SAMPLES_PER_ELEMENT);
+        // strain_Gavg.scale(1.0 / SAMPLES_PER_ELEMENT);
+        // stress_Gavg.scale(1.0 / SAMPLES_PER_ELEMENT);
         for (int i = 0; i < NODES_PER_ELEMENT; i++)
         {
-            strain[i] = (strain_gauss[i] - strain_Gavg).scale(2 * sqrt(3)) + strain_Gavg;
-            stress[i] = (stress_gauss[i] - stress_Gavg).scale(2 * sqrt(3)) + stress_Gavg;
             auto node = (*eitr)->nodes[i];
             node->ct++;
             node->yx;
