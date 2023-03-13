@@ -16,7 +16,8 @@ public:
     T           x,y,z;      // coordinates
     double      dx, dy, dz; // displacements
     double      yx, yy, yz; // strain
-    double      fx, fy, fz; // stress
+    double      fx = 0, fy = 0, fz = 0, fxy = 0, fzy = 0, fzx = 0; // stress
+    double von_mises = 0;
     int ct = 0;
     idxType     idx;        // index
     Constraint<T>*    constraint; // constraint pointer

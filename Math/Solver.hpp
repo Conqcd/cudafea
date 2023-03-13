@@ -19,3 +19,10 @@ public:
     inline auto getResdualNorm()const {return ResdualNorm;}
 };
 
+
+namespace Math
+{
+    
+Vector solve3equation(Scalar a,Scalar b,Scalar c,Scalar d);
+
+} // namespace Math

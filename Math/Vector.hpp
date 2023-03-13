@@ -25,6 +25,7 @@ public:
     std::vector<Scalar> generateScalar()const;
     Vector& operator+=(const Vector& v);
     Vector& operator-=(const Vector& v);
+    Scalar& operator[](unsigned int index) {return m_Vec[index];}
     Scalar operator[](unsigned int index)const {return m_Vec[index];}
 
     inline auto begin()const {return m_Vec.begin();}

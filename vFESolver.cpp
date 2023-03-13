@@ -4,6 +4,7 @@
 #include "Math/Solver.hpp"
 #include<chrono>
 #include<thread>
+#include<cmath>
 
 //============ Constructor / Destructor
 
@@ -735,10 +736,9 @@ bool vFESolver::PrintStress(const char *filename)
     idxType globalID;
     
     xyzType nx, ny, nz;
-    Scalar dx, dy, dz;
+    Scalar vm,fx,fy,fz,fxy,fzy,fzx;
     FILE * outFile;
     NodeSet_it nitr;
-    
 
     try
     {
@@ -760,12 +760,17 @@ bool vFESolver::PrintStress(const char *filename)
             nx = (*nitr)->x;
             ny = (*nitr)->y;
             nz = (*nitr)->z;
-            dx = (*nitr)->dx;
-            dy = (*nitr)->dy;
-            dz = (*nitr)->dz;
+            vm = (*nitr)->von_mises / (*nitr)->ct;
+            fx = (*nitr)->fx / (*nitr)->ct;
+            fy = (*nitr)->fy / (*nitr)->ct;
+            fz = (*nitr)->fz / (*nitr)->ct;
+            fxy = (*nitr)->fxy / (*nitr)->ct;
+            fzy = (*nitr)->fzy / (*nitr)->ct;
+            fzx = (*nitr)->fzx / (*nitr)->ct;
+
             globalID = (*nitr)->idx;
       
-			fprintf(outFile, "%d   %d   %d   %d   %.9le   %.9le   %.9le  \n", globalID, nx, ny, nz, dx, dy, dz);
+			fprintf(outFile, "%d   %d   %d   %d   %.9le   %.9le   %.9le   %.9le   %.9le   %.9le   %.9le\n", globalID, nx, ny, nz, vm, fx, fy, fz, fxy, fzy, fzx);
         }// for each node in Node Set
         fclose(outFile);
 
@@ -1420,14 +1425,13 @@ void ComputeB(std::vector<DenseMatrix>& Bs)
 bool vFESolver::ComputeStrainAndStrss()
 {
     if(!DISPLACEMENT_DONE) return false;
-    STRAIN_DONE = true;
     std::vector<DenseMatrix> Bs(NODES_PER_ELEMENT,{6,24});
     ComputeB(Bs);
 
     for (auto eitr = ElemS.begin(); eitr != ElemS.end(); ++eitr)
     {
         // Vector strain_gauss[SAMPLES_PER_ELEMENT],stress_gauss[SAMPLES_PER_ELEMENT];
-        Vector strain[NODES_PER_ELEMENT],stress[NODES_PER_ELEMENT];
+        Vector strain[NODES_PER_ELEMENT],stress[NODES_PER_ELEMENT],mStrain[NODES_PER_ELEMENT],mStress[NODES_PER_ELEMENT];
         Vector d(NODES_PER_ELEMENT * 3);
         for (int i = 0; i < NODES_PER_ELEMENT; i++)
         {
@@ -1453,17 +1457,35 @@ bool vFESolver::ComputeStrainAndStrss()
         // stress_Gavg.scale(1.0 / SAMPLES_PER_ELEMENT);
         for (int i = 0; i < NODES_PER_ELEMENT; i++)
         {
+            mStrain[i] = Math::solve3equation(1.0,-strain[i][0] - strain[i][1] - strain[i][2],
+            (strain[i][0] * strain[i][1] + strain[i][2] * strain[i][1] + strain[i][0] * strain[i][2] 
+            - strain[i][3] * strain[i][3] - strain[i][4] * strain[i][4] - strain[i][5] * strain[i][5]),
+            -strain[i][0] * strain[i][1] * strain[i][2] - 2 * strain[i][3] * strain[i][4] * strain[i][5]
+            + strain[i][0] * strain[i][4] * strain[i][4] + strain[i][1] * strain[i][5] * strain[i][5] +
+            strain[i][2] * strain[i][3] * strain[i][3]);
+            mStress[i] = Math::solve3equation(1.0,-stress[i][0] - stress[i][1] - stress[i][2],
+            (stress[i][0] * stress[i][1] + stress[i][2] * stress[i][1] + stress[i][0] * stress[i][2] 
+            - stress[i][3] * stress[i][3] - stress[i][4] * stress[i][4] - stress[i][5] * stress[i][5]),
+            -stress[i][0] * stress[i][1] * stress[i][2] - 2 * stress[i][3] * stress[i][4] * stress[i][5]
+            + stress[i][0] * stress[i][4] * stress[i][4] + stress[i][1] * stress[i][5] * stress[i][5] +
+            stress[i][2] * stress[i][3] * stress[i][3]);
             auto node = (*eitr)->nodes[i];
+            auto von_mises = std::sqrt(0.5 * ((mStress[i][0] - mStress[i][1]) * (mStress[i][0] - mStress[i][1])
+            + (mStress[i][1] - mStress[i][2]) * (mStress[i][1] - mStress[i][2])
+            + (mStress[i][2] - mStress[i][0]) * (mStress[i][2] - mStress[i][0])));
             node->ct++;
-            node->yx;
-            node->yy;
-            node->yz;
-            node->fx;
-            node->fy;
-            node->fz;
+            node->von_mises += von_mises;
+            node->fx += stress[i][0];
+            node->fy += stress[i][1];
+            node->fz += stress[i][2];
+            node->fxy += stress[i][3];
+            node->fzy += stress[i][4];
+            node->fzx += stress[i][5];
         }
         int i = 0;
     }// for each node in Node Set
+    STRAIN_DONE = true;
+    STRESS_DONE = true;
     return STRAIN_DONE;
 }
 
