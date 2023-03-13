@@ -86,7 +86,8 @@ public:
     virtual void PreAllocation(idxType)override;
     virtual double index(idxType row,idxType col)const override;
 
-    SymetrixSparseMatrix inverse()const;
+    SymetrixSparseMatrix inverse_lowertri()const;
+    SymetrixSparseMatrix transpose()const;
     SymetrixSparseMatrix ichol()const;
 
     inline const auto& getRow(idxType row)const {

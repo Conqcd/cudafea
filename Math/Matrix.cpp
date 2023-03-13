@@ -253,7 +253,8 @@ double SymetrixSparseMatrix::index(idxType row,idxType col)const
         return 0;
     return m_Mat[row].at(col);
 }
-SymetrixSparseMatrix SymetrixSparseMatrix::inverse()const
+
+SymetrixSparseMatrix SymetrixSparseMatrix::inverse_lowertri()const
 {
     SymetrixSparseMatrix mat(m_row,m_col);
     mat.PreAllocation(preA);
@@ -273,26 +274,76 @@ SymetrixSparseMatrix SymetrixSparseMatrix::inverse()const
     return mat;
 }
 
+SymetrixSparseMatrix SymetrixSparseMatrix::transpose()const
+{
+    SymetrixSparseMatrix mat(m_col,m_row);
+    mat.PreAllocation(preA);
+    for (int i = 0; i < m_row; i++)
+    {
+        for(auto& col:m_Mat[i])
+        {
+            mat.insert(col.first,i,col.second);
+        }
+    }
+    return mat;
+}
+
 SymetrixSparseMatrix SymetrixSparseMatrix::ichol()const
 {
-    auto mat = *this;
-    
+    std::decay_t<decltype(*this)> mat(m_row,m_col);
+    // mat = *this;
     mat.PreAllocation(preA);
-    for (int k = 0; k < m_row; k++)
-    {
-        mat.insert(k,k,std::sqrt(mat.index(k,k)));
-        
-        for (int i = k + 1; i < m_col; i++)
-            if(mat.index(i,k) != 0)
-                mat.insert(i,k,mat.index(i,k) / mat.index(k,k));
-        for (int j = k + 1; j < m_col; j++)
-            for (int i = j; i < m_col; i++)
-                if (mat.index(i,j) != 0)
-                    mat.insert(i,j,mat.index(i,j) - mat.index(i,k) * mat.index(j,k));
-    }
+    
+    std::vector<std::map<idxType,double>> m_colMat(m_col);
     for (int i = 0; i < m_row; i++)
-        for (int j = i + 1; j < m_col; j++)
-            mat.insert(i,j,0);
+    {
+        for(auto& col:m_Mat[i])
+        {    
+            if(m_colMat[col.first].count(i) == 0)
+            {
+                assert(m_colMat[col.first].size() < preA);
+            }
+            if(col.second != 0)
+                m_colMat[col.first][i] = col.second;
+        }
+    }
+    
+    for (int k = 0; k < m_col; k++)
+    {
+        m_colMat[k][k] = std::sqrt(m_colMat[k][k]);
+        for(auto& row:m_colMat[k])
+            if(row.first > k && row.second != 0)
+                row.second /= m_colMat[k][k];
+        for (int j = k + 1; j < m_col; j++)
+        {
+            if(m_colMat[k].count(j) == 0)
+                continue;
+            for(auto& row:m_colMat[j])
+                if(row.first >= j && m_colMat[k].count(row.first) != 0)
+                    row.second -= m_colMat[k][row.first] * m_colMat[k][j];
+        }
+
+
+        // mat.insert(k,k,std::sqrt(mat.index(k,k)));
+        // for (int i = k + 1; i < m_row; i++)
+        //     if(mat.index(i,k) != 0)
+        //         mat.insert(i,k,mat.index(i,k) / mat.index(k,k));
+        // for (int j = k + 1; j < m_col; j++)
+        //     for (int i = j; i < m_row; i++)
+        //         if (mat.index(i,j) != 0)
+        //             mat.insert(i,j,mat.index(i,j) - mat.index(i,k) * mat.index(j,k));
+    }
+    // for (int i = 0; i < m_row; i++)
+    //     for (int j = i + 1; j < m_col; j++)
+    //         mat.insert(i,j,0);
+    for (int i = 0; i < m_col; i++)
+    {
+        for(auto& row:m_colMat[i])
+        {    
+            if(row.first >= i)
+                mat.insert(row.first,i,row.second);
+        }
+    }
     return mat;
 }
     

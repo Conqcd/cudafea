@@ -244,10 +244,8 @@ protected:
     // COLLECTIVE
     bool ComputeRHS(Vector& rhs);
 
-    bool ComputeStrain();
+    bool ComputeStrainAndStrss();
 
-    bool ComputeStress();
-    
     //================ Allocate Local Rows / Columns (matrix / vec)
     
     bool AllocateLocalMatrix(Matrix& mat);

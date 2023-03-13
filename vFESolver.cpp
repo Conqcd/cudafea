@@ -682,7 +682,7 @@ bool vFESolver::PrintStrain(const char *filename)
     FILE * outFile;
     NodeSet_it nitr;
 
-    ComputeStrain();
+    ComputeStrainAndStrss();
 
     try
     {
@@ -739,7 +739,6 @@ bool vFESolver::PrintStress(const char *filename)
     FILE * outFile;
     NodeSet_it nitr;
     
-    ComputeStress();
 
     try
     {
@@ -1332,7 +1331,20 @@ bool vFESolver::ComputeRHS(Vector& rhs){
     
 }// ComputeRHS()
 
-bool vFESolver::ComputeStrain()
+void PrintMatrix(const Matrix& mat)
+{
+    for (int i = 0; i < mat.get_row(); i++)
+    {
+        for (int j = 0; j < mat.get_col(); j++)
+        {
+            std::cout << mat.index(i,j) << "\t";
+        }
+        std::cout << std::endl;       
+    }
+    
+}
+
+bool vFESolver::ComputeStrainAndStrss()
 {
     if(!DISPLACEMENT_DONE) return false;
     STRAIN_DONE = true;
@@ -1352,9 +1364,11 @@ bool vFESolver::ComputeStrain()
         for (int i = 0; i < SAMPLES_PER_ELEMENT; i++)
         {
             strain_gauss[i] = gradientMtx[i].getmat() * d;
+            PrintMatrix(gradientMtx[i].getmat());
             strain_Gavg += strain_gauss[i];
             // strain_gauss[i].scale(gradientMtx[i].getJdet());
             stress_gauss[i] = MateM[(*eitr)->material].lsm.propMtx.getmat() * strain_gauss[i];
+            // PrintMatrix(MateM[(*eitr)->material].lsm.propMtx.getmat());
             stress_Gavg += stress_gauss[i];
             // stress[i] = stress_gauss[i];
         }
@@ -1378,13 +1392,6 @@ bool vFESolver::ComputeStrain()
     return STRAIN_DONE;
 }
 
-bool vFESolver::ComputeStress()
-{
-    if(!STRAIN_DONE) return false;
-
-    STRESS_DONE = true;
-    return STRESS_DONE;
-}
  
 
 //========== Solve
