@@ -263,6 +263,8 @@ SymetrixSparseMatrix SymetrixSparseMatrix::inverse_lowertri()const
         mat.insert(i,i,1 / index(i,i));
         for (int j = 0; j < i; j++)
         {
+            // if(index(i,j) == 0)
+                // continue;
             Scalar s = 0;
             for (int k = j; k < i; k++)
             {

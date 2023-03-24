@@ -203,9 +203,9 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 	dim3 blockSize(bs);
 	dim3 threadSize(32);
 	Scalar alpha = 0.0,rr0,rr1,beta = 0.0;
-
-	// auto precon = A.ichol().inverse_lowertri();
-	auto precon = A.ichol();
+	std::cout << "12314124\n" << std::endl;
+	auto precon = A.ichol().inverse_lowertri();
+	// auto precon = A.ichol();
 	auto preconT = precon.transpose();
 	CudaSPMatrix cspm(A.get_row(),A.get_col(),A);
 	CudaSPMatrix prec(precon.get_row(),precon.get_col(),precon);
@@ -214,11 +214,13 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 	thrust::device_vector<Scalar> r(b.begin(),b.end()),xx(b.size()),p(b.size()),Ap(b.size()),temp(b.size()),
 	y(b.size()),z(b.size()),w(b.size()),lastr(b.size());
 
+	std::cout << "start!" << std::endl;
+
 	MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&y[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,y.size());
 	MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&z[0]),thrust::raw_pointer_cast(&y[0]),precT.dev_matrix,precT.preA,z.size());
 	p = z;
-	std::vector<Scalar> tempp{z.begin(),z.end()};
-	std::vector<Scalar> tempp2{y.begin(),y.end()};
+	// std::vector<Scalar> tempp{z.begin(),z.end()};
+	// std::vector<Scalar> tempp2{y.begin(),y.end()};
 	iter = 0;
 	thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
 	norm = 1000;
@@ -231,20 +233,20 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 	{
 		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&w[0]),thrust::raw_pointer_cast(&p[0]),cspm.dev_matrix,cspm.preA,Ap.size());
 
-		std::vector<Scalar> tempp{w.begin(),w.end()};
+		// std::vector<Scalar> tempp{w.begin(),w.end()};
 		thrust::transform(thrust::device,p.begin(),p.end(),w.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		alpha = rr0 / thrust::reduce(thrust::device,temp.begin(),temp.end());
 
 		computeX_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&xx[0]),thrust::raw_pointer_cast(&p[0]),xx.size(),alpha);
-		tempp = {xx.begin(),xx.end()};
+		// tempp = {xx.begin(),xx.end()};
 
 		lastr = r;
 		computeR_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&w[0]),r.size(),alpha);
-		tempp = {r.begin(),r.end()};
+		// tempp = {r.begin(),r.end()};
 
 		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&y[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,y.size());
 		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&z[0]),thrust::raw_pointer_cast(&y[0]),precT.dev_matrix,precT.preA,z.size());
-		tempp = {z.begin(),z.end()};
+		// tempp = {z.begin(),z.end()};
 
 
 		thrust::transform(thrust::device,r.begin(),r.end(),lastr.begin(),temp.begin(),thrust::minus<Scalar>());
@@ -257,12 +259,13 @@ void PCG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double toleranc
 		// rr0 = rr1;
 
 		computeP_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&z[0]),p.size(),beta);
-		tempp = {p.begin(),p.end()};
+		// tempp = {p.begin(),p.end()};
 
 		iter++;
 		thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		norm = thrust::reduce(thrust::device,temp.begin(),temp.end());
 		norm = std::sqrt(norm);
+		std::cout << iter << norm << std::endl;
 	}
 	x.setvalues({xx.begin(),xx.end()});
 }
