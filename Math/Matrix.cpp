@@ -349,6 +349,20 @@ SymetrixSparseMatrix SymetrixSparseMatrix::ichol()const
     return mat;
 }
     
+SymetrixSparseMatrix SymetrixSparseMatrix::SSORAI()const
+{
+    std::decay_t<decltype(*this)> mat(m_row,m_col);
+    mat.PreAllocation(preA);
+    double ww = 1.0;
+
+    for (int i = 0; i < m_row; i++)
+    {
+        for(auto& col:m_Mat[i])
+            mat.insert(i,col.first,std::sqrt(2 - ww) * std::sqrt(ww / index(i,i)) * ((col.first == i) - ww * col.second / index(col.first,col.first)));
+    }
+       return mat;
+}
+
 Vector operator*(const Matrix& matrix,const Vector& vec)
 {
     Vector vec2(matrix.get_row());

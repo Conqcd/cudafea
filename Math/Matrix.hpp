@@ -89,6 +89,7 @@ public:
     SymetrixSparseMatrix inverse_lowertri()const;
     SymetrixSparseMatrix transpose()const;
     SymetrixSparseMatrix ichol()const;
+    SymetrixSparseMatrix SSORAI()const;
 
     inline const auto& getRow(idxType row)const {
         assert(row < m_row && row >= 0);
