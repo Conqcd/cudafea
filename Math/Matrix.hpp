@@ -91,6 +91,9 @@ public:
     SymetrixSparseMatrix ichol()const;
     SymetrixSparseMatrix SSORAI()const;
 
+    void SolveTriL(Vector& x,const Vector& b);
+    void SolveTriU(Vector& x,const Vector& b);
+
     inline const auto& getRow(idxType row)const {
         assert(row < m_row && row >= 0);
         return m_Mat[row];}

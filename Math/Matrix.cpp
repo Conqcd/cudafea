@@ -357,10 +357,45 @@ SymetrixSparseMatrix SymetrixSparseMatrix::SSORAI()const
 
     for (int i = 0; i < m_row; i++)
     {
-        for(auto& col:m_Mat[i])
-            mat.insert(i,col.first,std::sqrt(2 - ww) * std::sqrt(ww / index(i,i)) * ((col.first == i) - ww * col.second / index(col.first,col.first)));
+        // for(auto& col:m_Mat[i])
+            // if(col.first <= i)
+            // {
+            //     auto dd = std::sqrt(2 - ww) * std::sqrt(ww / index(i,i)) * ((col.first == i) - ww * col.second / index(col.first,col.first));
+            //     mat.insert(i,col.first,std::sqrt(2 - ww) * std::sqrt(ww / index(i,i)) * ((col.first == i) - ww * col.second / index(col.first,col.first)));
+            // }
+        mat.insert(i,i,index(i,i));
     }
-       return mat;
+    return mat;
+}
+
+void SymetrixSparseMatrix::SolveTriL(Vector& x,const Vector& b)
+{
+    for (int i = 0; i < m_row; i++)
+    {
+        double rest = b[i];
+        for(auto& col:m_Mat[i])
+        {
+            if(col.first == i)
+                break;
+            rest -= col.second * x[col.first];
+        }
+        x[i] = rest / index(i,i);
+    }
+}
+
+void SymetrixSparseMatrix::SolveTriU(Vector& x,const Vector& b)
+{
+    for (int i = m_row - 1; i >= 0; i--)
+    {
+        double rest = b[i];
+        for(auto& col:m_Mat[i])
+        {
+            if(col.first == i)
+                continue;
+            rest -= col.second * x[col.first];
+        }
+        x[i] = rest / index(i,i);
+    }
 }
 
 Vector operator*(const Matrix& matrix,const Vector& vec)
