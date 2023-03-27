@@ -69,6 +69,7 @@ class SymetrixSparseMatrix : public Matrix
 private:
     std::vector<std::map<idxType,double>> m_Mat;
     idxType preA;
+    idxType count;
 public:
     SymetrixSparseMatrix();
     SymetrixSparseMatrix(idxType row,idxType col);

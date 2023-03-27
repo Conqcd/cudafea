@@ -50,6 +50,9 @@ protected:
     void AllocateData(const Vector&);
 };
 
+
+const int MaxCol = 81;
+
 class CudaSPMatrix
 {
 private:
@@ -58,6 +61,8 @@ private:
 public:
     int* preA;
     IndexValue** dev_matrix;
+    thrust::device_vector<idxType> colume;
+    thrust::device_vector<Scalar> value;
     CudaSPMatrix(int _row,int _col,const SymetrixSparseMatrix& mat) : row(_row),col(_col){AllocateData(mat);}
     ~CudaSPMatrix();
 protected:
