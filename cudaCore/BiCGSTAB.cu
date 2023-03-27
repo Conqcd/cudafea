@@ -70,13 +70,6 @@ __global__ void computeP(Scalar* p,Scalar* r,Scalar* v,int length,Scalar beta,Sc
 	p[id] = r[id] + beta * (p[id] - w * v[id]);
 }
 
-__global__ void computeP_CG(Scalar* p,Scalar* r,int length,Scalar beta)
-{
-	auto id = threadIdx.x + blockIdx.x * blockDim.x;
-	if(id >= length)
-		return;
-	p[id] = r[id] + beta * p[id];
-}
 
 __global__ void computeP_PCG(Scalar* p,Scalar* z,int length,Scalar beta)
 {
@@ -114,12 +107,60 @@ __global__ void computeX(Scalar* x,Scalar* p,Scalar* s,int length,double alpha,d
 	x[id] = x[id] + alpha * p[id] + w * s[id];
 }
 
-__global__ void computeX_CG(Scalar* x,Scalar* p,int length,double alpha)
+__global__ void MatrixMultVector_CG(Scalar* v1,Scalar* v2,IndexValue** matrix,int* preA,int length,int batch)
 {
-	auto id = threadIdx.x + blockIdx.x * blockDim.x;
-	if(id >= length)
-		return;
-	x[id] = x[id] + alpha * p[id] ;
+	int id = threadIdx.x + blockIdx.x * blockDim.x;
+	// if(id >= length)
+	// 	return;
+	id *= batch;
+	int len = min(length,id + batch);
+	for(;id < len;id++)
+	{
+		v1[id] = 0;
+		for (int i = 0; i < preA[id]; i++)
+		{
+			v1[id] += matrix[id][i].value * v2[matrix[id][i].colid];
+		}
+	}
+}
+
+__global__ void computeP_CG(Scalar* p,Scalar* r,int length,Scalar beta,int batch)
+{
+	int id = threadIdx.x + blockIdx.x * blockDim.x;
+	// if(id >= length)
+	// 	return;
+	id *= batch;
+	int len = min(length,id + batch);
+	for (; id < len; id++)
+	{
+		p[id] = r[id] + beta * p[id];
+	}
+}
+
+__global__ void computeX_CG(Scalar* x,Scalar* p,int length,double alpha,int batch)
+{
+	int id = threadIdx.x + blockIdx.x * blockDim.x;
+	// if(id >= length)
+	// 	return;
+	id *= batch;
+	int len = min(length,id + batch);
+	for (; id < len; id++)
+	{
+		x[id] = x[id] + alpha * p[id] ;
+	}
+}
+
+__global__ void computeR_CG(Scalar* r,Scalar* Ap,int length,double alpha,int batch)
+{
+	int id = threadIdx.x + blockIdx.x * blockDim.x;
+	// if(id >= length)
+	// 	return;
+	id *= batch;
+	int len = min(length,id + batch);
+	for (; id < len; id++)
+	{
+		r[id] = r[id] - alpha * Ap[id];
+	}
 }
 
 __global__ void computeX_PCG(Scalar* x,Scalar* p,int length,double alpha)
@@ -130,21 +171,12 @@ __global__ void computeX_PCG(Scalar* x,Scalar* p,int length,double alpha)
 	x[id] = x[id] + alpha * p[id] ;
 }
 
-
 __global__ void computeR(Scalar* r,Scalar* s,Scalar* t,int length,double w)
 {
 	auto id = threadIdx.x + blockIdx.x * blockDim.x;
 	if(id >= length)
 		return;
 	r[id] = s[id] - w * t[id];
-}
-
-__global__ void computeR_CG(Scalar* r,Scalar* Ap,int length,double alpha)
-{
-	auto id = threadIdx.x + blockIdx.x * blockDim.x;
-	if(id >= length)
-		return;
-	r[id] = r[id] - alpha * Ap[id];
 }
 
 __global__ void computeR_PCG(Scalar* r,Scalar* w,int length,double alpha)
@@ -157,14 +189,20 @@ __global__ void computeR_PCG(Scalar* r,Scalar* w,int length,double alpha)
 
 void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm)
 {
-	int bs = (A.get_row() / 32 * 32 == A.get_row()) ?  A.get_row() / 32 : A.get_row() / 32 + 1;
+	const int batch = 1;
+	int ts = 32 * batch;
+	int bs = (A.get_row() / ts * ts == A.get_row()) ?  A.get_row() / ts : A.get_row() / ts + 1;
+	// int bs = 32;
 	dim3 blockSize(bs);
-	dim3 threadSize(32);
+	dim3 threadSize(ts / batch);
+	// int mult = bs * ts;
+	// int batch = (A.get_row() / mult * mult == A.get_row()) ?  A.get_row() / mult : A.get_row() / mult + 1;
 	Scalar alpha = 0.0,rr0,rr1,beta = 0.0;
 
 	CudaSPMatrix cspm(A.get_row(),A.get_col(),A);
 
 	thrust::device_vector<Scalar> r(b.begin(),b.end()),xx(b.size()),p = r,Ap(b.size()),temp(b.size());
+
 
 	iter = 0;
 	norm = 1000;
@@ -172,23 +210,28 @@ void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance
 	thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
 	rr1 = thrust::reduce(thrust::device,temp.begin(),temp.end());
 
+	// std::vector<Scalar> tempp;
 
 	while(iter < limit && norm > tolerance * normb)
 	{
-		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&Ap[0]),thrust::raw_pointer_cast(&p[0]),cspm.dev_matrix,cspm.preA,Ap.size());
+		MatrixMultVector_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&Ap[0]),thrust::raw_pointer_cast(&p[0]),cspm.dev_matrix,cspm.preA,Ap.size(),batch);
+		// tempp = {Ap.begin(),Ap.end()};
 		thrust::transform(thrust::device,p.begin(),p.end(),Ap.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		alpha = rr1 / thrust::reduce(thrust::device,temp.begin(),temp.end());
 
 
-		computeX_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&xx[0]),thrust::raw_pointer_cast(&p[0]),xx.size(),alpha);
+		computeX_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&xx[0]),thrust::raw_pointer_cast(&p[0]),xx.size(),alpha,batch);
+		// tempp = {xx.begin(),xx.end()};
 
-		computeR_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&Ap[0]),r.size(),alpha);
+		computeR_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&Ap[0]),r.size(),alpha,batch);
+		// tempp = {r.begin(),r.end()};
 
 		rr0 = rr1;
 		thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		rr1 = thrust::reduce(thrust::device,temp.begin(),temp.end());
 		beta = rr1 / rr0;
-		computeP_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&r[0]),p.size(),beta);
+		computeP_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&r[0]),p.size(),beta,batch);
+		// tempp = {p.begin(),p.end()};
 		iter++;
 		thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		norm = thrust::reduce(thrust::device,temp.begin(),temp.end());
