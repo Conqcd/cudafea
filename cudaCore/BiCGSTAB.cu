@@ -141,7 +141,7 @@ __global__ void MatrixMultVector_ELL(Scalar* v1,Scalar* v2,idxType* col,Scalar* 
 	// 	return;
 	id *= batch;
 	int len = min(row,id + batch);
-	#pragma unroll
+	// #pragma unroll
 	for(;id < len;id++)
 	{
 		v1[id] = 0;
