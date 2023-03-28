@@ -1,6 +1,7 @@
 #pragma once
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+// #include "helper_math.h"
 
 #include<thrust/host_vector.h>
 #include<thrust/device_vector.h>
@@ -13,7 +14,7 @@
 struct IndexValue
 {
     int colid;
-    double value;
+    Scalar value;
     // __host__ __device__  IndexValue(){}
     // __host__ __device__  ~IndexValue(){}
     // __host__ __device__  IndexValue(const IndexValue& v){

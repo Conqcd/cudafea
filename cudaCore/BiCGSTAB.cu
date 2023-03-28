@@ -100,7 +100,7 @@ __global__ void MatrixMultVector(Scalar* v1,Scalar* v2,IndexValue** matrix,int* 
 	}
 }
 
-__global__ void computeS(Scalar* s,Scalar* r,Scalar* v,int length,double alpha)
+__global__ void computeS(Scalar* s,Scalar* r,Scalar* v,int length,Scalar alpha)
 {
 	auto id = threadIdx.x + blockIdx.x * blockDim.x;
 	if(id >= length)
@@ -108,30 +108,12 @@ __global__ void computeS(Scalar* s,Scalar* r,Scalar* v,int length,double alpha)
 	s[id] = r[id] - alpha * v[id];
 }
 
-__global__ void computeX(Scalar* x,Scalar* p,Scalar* s,int length,double alpha,double w)
+__global__ void computeX(Scalar* x,Scalar* p,Scalar* s,int length,Scalar alpha,double w)
 {
 	auto id = threadIdx.x + blockIdx.x * blockDim.x;
 	if(id >= length)
 		return;
 	x[id] = x[id] + alpha * p[id] + w * s[id];
-}
-
-__global__ void MatrixMultVector_CG(Scalar* v1,Scalar* v2,IndexValue** matrix,int* preA,int length,int batch)
-{
-	int id = threadIdx.x + blockIdx.x * blockDim.x;
-	// if(id >= length)
-	// 	return;
-	id *= batch;
-	int len = min(length,id + batch);
-	#pragma unroll
-	for(;id < len;id++)
-	{
-		v1[id] = 0;
-		for (int i = 0; i < preA[id]; i++)
-		{
-			v1[id] += matrix[id][i].value * v2[matrix[id][i].colid];
-		}
-	}
 }
 
 __global__ void MatrixMultVector_ELL(Scalar* v1,Scalar* v2,idxType* col,Scalar* values,int row,int batch)
@@ -161,15 +143,24 @@ __global__ void computeP_CG(Scalar* p,Scalar* r,int length,Scalar beta,int batch
 	// 	return;
 	id *= batch;
 	int len = min(length,id + batch);
+	// float3* pp = reinterpret_cast<float3*>(p);
+	// float3* rr = reinterpret_cast<float3*>(r);
 	for (; id < len; id+=1)
 	{
 		p[id] = r[id] + beta * p[id];
+		// pp[id].x = rr[id].x + beta * pp[id].x;
+		// pp[id].y = rr[id].y + beta * pp[id].y;
+		// pp[id].z = rr[id].z + beta * pp[id].z;
+		// float3 rrr = rr[id];
+		// pp[id].x = rrr.x + beta * pp[id].x;
+		// pp[id].y = rrr.y + beta * pp[id].y;
+		// pp[id].z = rrr.z + beta * pp[id].z;
 		// p[id + 1] = r[id + 1] + beta * p[id + 1];
 		// p[id + 2] = r[id + 2] + beta * p[id + 2];
 	}
 }
 
-__global__ void computeX_CG(Scalar* x,Scalar* p,int length,double alpha,int batch)
+__global__ void computeX_CG(Scalar* x,Scalar* p,int length,Scalar alpha,int batch)
 {
 	int id = threadIdx.x + blockIdx.x * blockDim.x;
 	// if(id >= length)
@@ -182,7 +173,7 @@ __global__ void computeX_CG(Scalar* x,Scalar* p,int length,double alpha,int batc
 	}
 }
 
-__global__ void computeR_CG(Scalar* r,Scalar* Ap,int length,double alpha,int batch)
+__global__ void computeR_CG(Scalar* r,Scalar* Ap,int length,Scalar alpha,int batch)
 {
 	int id = threadIdx.x + blockIdx.x * blockDim.x;
 	// if(id >= length)
@@ -195,15 +186,36 @@ __global__ void computeR_CG(Scalar* r,Scalar* Ap,int length,double alpha,int bat
 	}
 }
 
-__global__ void computeX_R_CG(Scalar* x,Scalar* p,Scalar* r,Scalar* Ap,int length,double alpha,int batch)
+// __global__ void computeX_R_CG(Scalar* x,Scalar* p,Scalar* r,Scalar* Ap,int length,double alpha,int batch)
+__global__ void computeX_R_CG(Scalar* x,Scalar* p,Scalar* r,Scalar* Ap,int length,Scalar alpha,int batch)
 {
 	int id = threadIdx.x + blockIdx.x * blockDim.x;
 	// if(id >= length)
 	// 	return;
 	id *= batch;
 	int len = min(length,id + batch);
-	for (; id < len; id+=1)
+	// float3* xx = reinterpret_cast<float3*>(x);
+	// float3* rr = reinterpret_cast<float3*>(r);
+	// float3* pp = reinterpret_cast<float3*>(p);
+	// float3* AApp = reinterpret_cast<float3*>(Ap);
+	for (; id < len; id += 1)
 	{
+		// float3 xxx = xx[id];
+		// float3 rrr = rr[id];
+		// float3 ppp = pp[id];
+		// float3 AAAppp = AApp[id];
+
+		// xxx.x += alpha * ppp.x;
+		// xxx.y += alpha * ppp.y;
+		// xxx.z += alpha * ppp.z;
+
+		// rrr.x -= alpha * AAAppp.x;
+		// rrr.y -= alpha * AAAppp.y;
+		// rrr.z -= alpha * AAAppp.z;
+
+		// xx[id] = xxx;
+		// rr[id] = rrr;
+
 		x[id] = x[id] + alpha * p[id];
 		r[id] = r[id] - alpha * Ap[id];
 
@@ -215,7 +227,7 @@ __global__ void computeX_R_CG(Scalar* x,Scalar* p,Scalar* r,Scalar* Ap,int lengt
 	}
 }
 
-__global__ void computeX_PCG(Scalar* x,Scalar* p,int length,double alpha)
+__global__ void computeX_PCG(Scalar* x,Scalar* p,int length,Scalar alpha)
 {
 	auto id = threadIdx.x + blockIdx.x * blockDim.x;
 	if(id >= length)
@@ -223,7 +235,7 @@ __global__ void computeX_PCG(Scalar* x,Scalar* p,int length,double alpha)
 	x[id] = x[id] + alpha * p[id] ;
 }
 
-__global__ void computeR(Scalar* r,Scalar* s,Scalar* t,int length,double w)
+__global__ void computeR(Scalar* r,Scalar* s,Scalar* t,int length,Scalar w)
 {
 	auto id = threadIdx.x + blockIdx.x * blockDim.x;
 	if(id >= length)
@@ -231,7 +243,7 @@ __global__ void computeR(Scalar* r,Scalar* s,Scalar* t,int length,double w)
 	r[id] = s[id] - w * t[id];
 }
 
-__global__ void computeR_PCG(Scalar* r,Scalar* w,int length,double alpha)
+__global__ void computeR_PCG(Scalar* r,Scalar* w,int length,Scalar alpha)
 {
 	auto id = threadIdx.x + blockIdx.x * blockDim.x;
 	if(id >= length)
@@ -246,6 +258,7 @@ void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance
 	int bs = (A.get_row() / ts * ts == A.get_row()) ?  A.get_row() / ts : A.get_row() / ts + 1;
 	// int bs = 32;
 	dim3 blockSize(bs);
+	dim3 blockSize2(bs / 3);
 	dim3 threadSize(ts / batch);
 	// int mult = bs * ts;
 	// int batch = (A.get_row() / mult * mult == A.get_row()) ?  A.get_row() / mult : A.get_row() / mult + 1;
@@ -266,16 +279,11 @@ void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance
 
 	while(iter < limit && norm > tolerance * normb)
 	{
-		// MatrixMultVector_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&Ap[0]),thrust::raw_pointer_cast(&p[0]),cspm.dev_matrix,cspm.preA,Ap.size(),batch);
 		MatrixMultVector_ELL<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&Ap[0]),thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&(cspm.colume[0])),thrust::raw_pointer_cast(&(cspm.value[0])),Ap.size(),batch);
 		// tempp = {Ap.begin(),Ap.end()};
 		thrust::transform(thrust::device,p.begin(),p.end(),Ap.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		alpha = rr1 / thrust::reduce(thrust::device,temp.begin(),temp.end());
 
-		// computeX_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&xx[0]),thrust::raw_pointer_cast(&p[0]),xx.size(),alpha,batch);
-		// tempp = {xx.begin(),xx.end()};
-
-		// computeR_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&Ap[0]),r.size(),alpha,batch);
 		computeX_R_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&xx[0]),thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&Ap[0]),r.size(),alpha,batch);
 		// tempp = {r.begin(),r.end()};
 
@@ -285,9 +293,8 @@ void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance
 		beta = rr1 / rr0;
 		computeP_CG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&r[0]),p.size(),beta,batch);
 		// tempp = {p.begin(),p.end()};
+		
 		iter++;
-		// thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
-		// norm = thrust::reduce(thrust::device,temp.begin(),temp.end());
 		norm = std::sqrt(rr1);
 	}
 	x.setvalues({xx.begin(),xx.end()});

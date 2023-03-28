@@ -56,8 +56,8 @@ Vector solve3equation(Scalar a,Scalar b,Scalar c,Scalar d)
     {
         auto K = A / B;
         Vector bb(3);
-        bb[0] = std::max(-b / a + K,-0.5 * K);
-        bb[1] = bb[2] = std::min(-b / a + K,-0.5 * K);
+        bb[0] = std::max(-b / a + K,(Scalar)-0.5 * K);
+        bb[1] = bb[2] = std::min(-b / a + K,(Scalar)-0.5 * K);
         return bb;
     }else
     {
