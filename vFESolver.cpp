@@ -473,11 +473,12 @@ bool vFESolver::LoadConstraints(const char *filename){
         if(!OK)
         {
             printf("ERROR: could not add constrained node %d : [%d, %d, %d] \n", conscount, x, y, z);
-            return OK;
+            // return OK;
         }
         
     }// for lines
 
+    OK = true;
     Idx_bias.resize(NodeS.size()* DOF_3D - totlines * DOF_3D + totalrhs);
 	
     idxType num = 0;
