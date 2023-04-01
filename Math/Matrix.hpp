@@ -29,7 +29,8 @@ public:
     virtual void destroy() = 0;
     virtual void insertValues(const std::vector<idxType>&,const std::vector<idxType>&,const std::vector<Scalar>&) = 0;
     virtual void PreAllocation(idxType) = 0;
-    virtual double index(idxType,idxType)const = 0;
+    virtual Scalar index(idxType,idxType)const = 0;
+    virtual Scalar index(idxType,idxType) = 0;
 
 
     inline idxType get_row()const {return m_row;}
@@ -56,9 +57,10 @@ public:
     virtual void destroy() override;
     virtual void insertValues(const std::vector<idxType>&,const std::vector<idxType>&,const std::vector<Scalar>&) override;
     virtual void PreAllocation(idxType) override;
-    virtual double index(idxType row,idxType col)const override;
+    virtual Scalar index(idxType row,idxType col)const override;
+    virtual Scalar index(idxType row,idxType col)override;
 
-    virtual double operator[](unsigned int index)const override
+    virtual Scalar operator[](unsigned int index)const override
     {
         return m_Mat[index / m_col][index % m_col];
     }
@@ -67,7 +69,7 @@ public:
 class SymetrixSparseMatrix : public Matrix
 {
 private:
-    std::vector<std::map<idxType,double>> m_Mat;
+    std::vector<std::vector<std::pair<idxType,Scalar>>> m_Mat;
     idxType preA;
     idxType count;
 public:
@@ -76,16 +78,17 @@ public:
     virtual~SymetrixSparseMatrix();
 
     virtual void reset(idxType row,idxType col)override;
-    virtual void insert(idxType row,idxType col,double value)override;
-    virtual void add(idxType row,idxType col,double value)override;
-    virtual void scale(double s)override;
+    virtual void insert(idxType row,idxType col,Scalar value)override;
+    virtual void add(idxType row,idxType col,Scalar value)override;
+    virtual void scale(Scalar s)override;
     virtual void mult(const Matrix& m)override;
     virtual void mult(const Matrix& m1,const Matrix& m2)override;
-    virtual void AXPY(double,const Matrix&)override;
+    virtual void AXPY(Scalar,const Matrix&)override;
     virtual void destroy()override;
     virtual void insertValues(const std::vector<idxType>&,const std::vector<idxType>&,const std::vector<Scalar>&)override;
     virtual void PreAllocation(idxType)override;
-    virtual double index(idxType row,idxType col)const override;
+    virtual Scalar index(idxType row,idxType col)const override;
+    virtual Scalar index(idxType row,idxType col)override;
 
     SymetrixSparseMatrix inverse_lowertri()const;
     SymetrixSparseMatrix transpose()const;
@@ -97,14 +100,25 @@ public:
 
     inline const auto& getRow(idxType row)const {
         assert(row < m_row && row >= 0);
-        return m_Mat[row];}
-
-    virtual double operator[](unsigned int index)const override
+        return m_Mat[row];
+    }
+    inline auto getCol(idxType row,idxType col)const{
+        std::pair<idxType,Scalar> p;
+        p.first = col;
+        return std::lower_bound(m_Mat[row].begin(),m_Mat[row].end(),p,[](const auto& kv1,const auto& kv2) -> bool {return kv1.first < kv2.first;});
+    }
+    inline auto getCol(idxType row,idxType col){
+        std::pair<idxType,Scalar> p;
+        p.first = col;
+        return std::lower_bound(m_Mat[row].begin(),m_Mat[row].end(),p,[](const auto& kv1,const auto& kv2) -> bool {return kv1.first < kv2.first;});
+    }
+    virtual Scalar operator[](unsigned int id)const override
     {
-        return m_Mat[index / m_col].at(index % m_col);
+        return index(id / m_col,id % m_col);
     }
     // SymetrixSparseMatrix operator *(const Matrix& m);
 };
+
 Vector operator*(const Matrix& matrix,const Vector& vec);
 namespace Math
 {

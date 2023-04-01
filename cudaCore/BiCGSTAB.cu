@@ -251,6 +251,40 @@ __global__ void computeR_PCG(Scalar* r,Scalar* w,int length,Scalar alpha)
 	r[id] = r[id] - alpha * w[id];
 }
 
+void SolveTriL(const SymetrixSparseMatrix& m,thrust::host_vector<Scalar>& x,const thrust::host_vector<Scalar>& b)
+{
+    for (int i = 0; i < m.get_row(); i++)
+    {
+        double rest = b[i];
+        for(auto& col:m.getRow(i))
+        // for(int i = 0;i < 81;i++)
+        {
+            // rest -= 88 * x[0];
+            if(col.first == i)
+                break;
+            rest -= col.second * x[col.first];
+        }
+        x[i] = rest / m.index(i,i);
+    }
+}
+
+void SolveTriU(const SymetrixSparseMatrix& m,thrust::host_vector<Scalar>& x,const thrust::host_vector<Scalar>& b)
+{
+    for (int i = m.get_row() - 1; i >= 0; i--)
+    {
+        double rest = b[i];
+        for(auto& col:m.getRow(i))
+        // for(int i = 0;i < 81;i++)
+        {
+            // rest -= 88 * x[0];
+            if(col.first == i)
+                continue;
+            rest -= col.second * x[col.first];
+        }
+        x[i] = rest / m.index(i,i);
+    }
+}
+
 void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm)
 {
 	const int batch = 1;
@@ -267,7 +301,6 @@ void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance
 	CudaSPMatrix cspm(A.get_row(),A.get_col(),A);
 
 	thrust::device_vector<Scalar> r(b.begin(),b.end()),xx(b.size()),p = r,Ap(b.size()),temp(b.size());
-
 
 	iter = 0;
 	norm = 1000;
@@ -302,9 +335,11 @@ void CG(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance
 
 void PCG_ICC(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm)
 {
-	int bs = (A.get_row() / 32 * 32 == A.get_row()) ?  A.get_row() / 32 : A.get_row() / 32 + 1;
+	const int batch = 1;
+	const int ts = 32 * batch;
+	int bs = (A.get_row() / ts * ts == A.get_row()) ?  A.get_row() / ts : A.get_row() / ts + 1;
 	dim3 blockSize(bs);
-	dim3 threadSize(32);
+	dim3 threadSize(ts);
 	Scalar alpha = 0.0,rr0,rr1,beta = 0.0;
 	// auto precon = A.ichol().inverse_lowertri();
 	auto precon = A.ichol();
@@ -320,9 +355,9 @@ void PCG_ICC(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tole
 
 	// MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&y[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,y.size());
 	// MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&z[0]),thrust::raw_pointer_cast(&y[0]),precT.dev_matrix,precT.preA,z.size());
-	Vector r_host = b,y_host(b.size()),z_host(b.size());
-	precon.SolveTriL(y_host,r_host);
-	preconT.SolveTriU(z_host,y_host);
+	thrust::host_vector<Scalar> r_host(b.begin(),b.end()),y_host(b.size()),z_host(b.size());
+	SolveTriL(precon,y_host,r_host);
+	SolveTriU(preconT,z_host,y_host);
 	z = {z_host.begin(),z_host.end()};
 	p = z;
 	std::vector<Scalar> tempp{z.begin(),z.end()};
@@ -337,24 +372,25 @@ void PCG_ICC(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tole
 
 	while(iter < limit && norm > tolerance * normb)
 	{
-		MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&w[0]),thrust::raw_pointer_cast(&p[0]),cspm.dev_matrix,cspm.preA,Ap.size());
+		// MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&w[0]),thrust::raw_pointer_cast(&p[0]),cspm.dev_matrix,cspm.preA,Ap.size());
+		MatrixMultVector_ELL<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&Ap[0]),thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&(cspm.colume[0])),thrust::raw_pointer_cast(&(cspm.value[0])),Ap.size(),batch);
 
 		// std::vector<Scalar> tempp{w.begin(),w.end()};
-		thrust::transform(thrust::device,p.begin(),p.end(),w.begin(),temp.begin(),thrust::multiplies<Scalar>());
+		thrust::transform(thrust::device,p.begin(),p.end(),Ap.begin(),temp.begin(),thrust::multiplies<Scalar>());
 		alpha = rr0 / thrust::reduce(thrust::device,temp.begin(),temp.end());
 
 		computeX_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&xx[0]),thrust::raw_pointer_cast(&p[0]),xx.size(),alpha);
 		// tempp = {xx.begin(),xx.end()};
 
-		lastr = r;
-		computeR_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&w[0]),r.size(),alpha);
+		// lastr = r;
+		computeR_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&r[0]),thrust::raw_pointer_cast(&Ap[0]),r.size(),alpha);
 		// tempp = {r.begin(),r.end()};
 
 		// MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&y[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,y.size());
 		// MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&z[0]),thrust::raw_pointer_cast(&y[0]),precT.dev_matrix,precT.preA,z.size());
-		r_host.setvalues({r.begin(),r.end()});
-		precon.SolveTriL(y_host,r_host);
-		preconT.SolveTriU(z_host,y_host);
+		r_host= {r.begin(),r.end()};
+		SolveTriL(precon,y_host,r_host);
+		SolveTriU(preconT,z_host,y_host);
 		z = {z_host.begin(),z_host.end()};
 		// tempp = {z.begin(),z.end()};
 
@@ -364,17 +400,17 @@ void PCG_ICC(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tole
 		rr1 = thrust::reduce(thrust::device,temp.begin(),temp.end());
 
 		beta = rr1 / rr0;
-		thrust::transform(thrust::device,r.begin(),r.end(),z.begin(),temp.begin(),thrust::multiplies<Scalar>());
-		rr0 = thrust::reduce(thrust::device,temp.begin(),temp.end());
-		// rr0 = rr1;
+		// thrust::transform(thrust::device,r.begin(),r.end(),z.begin(),temp.begin(),thrust::multiplies<Scalar>());
+		// rr0 = thrust::reduce(thrust::device,temp.begin(),temp.end());
+		rr0 = rr1;
 
 		computeP_PCG<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&p[0]),thrust::raw_pointer_cast(&z[0]),p.size(),beta);
 		// tempp = {p.begin(),p.end()};
 
 		iter++;
-		thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
-		norm = thrust::reduce(thrust::device,temp.begin(),temp.end());
-		norm = std::sqrt(norm);
+		// thrust::transform(thrust::device,r.begin(),r.end(),r.begin(),temp.begin(),thrust::multiplies<Scalar>());
+		// norm = thrust::reduce(thrust::device,temp.begin(),temp.end());
+		norm = std::sqrt(rr1);
 		std::cout << iter << " " << norm << std::endl;
 	}
 	x.setvalues({xx.begin(),xx.end()});

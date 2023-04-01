@@ -122,10 +122,15 @@ void DenseMatrix::PreAllocation(idxType num)
     
 }
 
-double DenseMatrix::index(idxType row,idxType col)const
+Scalar DenseMatrix::index(idxType row,idxType col)const
 {
     return m_Mat[row][col];
 }
+Scalar DenseMatrix::index(idxType row,idxType col)
+{
+    return m_Mat[row][col];
+}
+
 
 
 
@@ -153,28 +158,30 @@ void SymetrixSparseMatrix::reset(idxType row,idxType col)
     m_Mat.resize(m_row);
 }
 
-void SymetrixSparseMatrix::insert(idxType row,idxType col,double value)
+void SymetrixSparseMatrix::insert(idxType row,idxType col,Scalar value)
 {
-    if(m_Mat[row].count(col) == 0)
+    auto it = getCol(row,col);
+    if(it == m_Mat[row].end() ||  it->first != col)
     {
-        assert(m_Mat[row].size() < preA);
-    }
-    m_Mat[row][col] = value;
-}
-
-void SymetrixSparseMatrix::add(idxType row,idxType col,double value)
-{
-    if(m_Mat[row].count(col) == 0)
-    {
-        assert(m_Mat[row].size() < preA);
-        m_Mat[row][col] = value;
+        assert(m_Mat[row].size() <= preA);
+        m_Mat[row].insert(it,{col,value});
     }else
-    {
-        m_Mat[row][col] += value;
-    }
+        it->second = value;
+    // m_Mat[row][col] = value;
 }
 
-void SymetrixSparseMatrix::scale(double s)
+void SymetrixSparseMatrix::add(idxType row,idxType col,Scalar value)
+{
+    auto it = getCol(row,col);
+    if(it == m_Mat[row].end() ||  it->first != col)
+    {
+        assert(m_Mat[row].size() <= preA);
+        m_Mat[row].insert(it,{col,value});
+    }else
+        it->second += value;
+}
+
+void SymetrixSparseMatrix::scale(Scalar s)
 {
     for (auto& row:m_Mat)
     {
@@ -226,15 +233,24 @@ void SymetrixSparseMatrix::insertValues(const std::vector<idxType>& rowid,const 
         for(auto& col:colid)
         {
             assert(row < m_row && row >= 0 && col < m_col && col >= 0);
-            bool exist = false;
-            if(m_Mat[row].count(col) == 0)
+            // bool exist = false;
+            auto it = getCol(row,col);
+            if(it == m_Mat[row].end() ||  it->first != col)
             {
                 assert(m_Mat[row].size() <= preA);
-            }
-            if(values[id] != 0)
-                m_Mat[row][col] = values[id++],count++;
-            else
-                id++;
+                m_Mat[row].insert(it,{col,values[id++]});
+                count++;
+            }else
+                it->second = values[id++];
+
+            // if(m_Mat[row].count(col) == 0)
+            // {
+            //     assert(m_Mat[row].size() <= preA);
+            // }
+            // if(values[id] != 0)
+            //     m_Mat[row][col] = values[id++],count++;
+            // else
+                // id++;
     }
 }
 
@@ -247,11 +263,20 @@ void SymetrixSparseMatrix::PreAllocation(idxType num)
     // }
 }
 
-double SymetrixSparseMatrix::index(idxType row,idxType col)const
-{
-    if(m_Mat[row].count(col) == 0)
+Scalar SymetrixSparseMatrix::index(idxType row,idxType col)
+{    
+    auto it = getCol(row,col);
+    if(it == m_Mat[row].end())
         return 0;
-    return m_Mat[row].at(col);
+    return it->second;
+}
+
+Scalar SymetrixSparseMatrix::index(idxType row,idxType col)const
+{    
+    auto it = getCol(row,col);
+    if(it == m_Mat[row].end())
+        return 0;
+    return it->second;
 }
 
 SymetrixSparseMatrix SymetrixSparseMatrix::inverse_lowertri()const
@@ -296,7 +321,7 @@ SymetrixSparseMatrix SymetrixSparseMatrix::ichol()const
     // mat = *this;
     mat.PreAllocation(preA);
     
-    std::vector<std::map<idxType,double>> m_colMat(m_col);
+    std::vector<std::map<idxType,Scalar>> m_colMat(m_col);
     for (int i = 0; i < m_row; i++)
     {
         for(auto& col:m_Mat[i])
@@ -387,7 +412,7 @@ void SymetrixSparseMatrix::SolveTriU(Vector& x,const Vector& b)
 {
     for (int i = m_row - 1; i >= 0; i--)
     {
-        double rest = b[i];
+        Scalar rest = b[i];
         for(auto& col:m_Mat[i])
         {
             if(col.first == i)
