@@ -351,6 +351,7 @@ void PCG_ICC(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tole
 	thrust::device_vector<Scalar> r(b.begin(),b.end()),xx(b.size()),p(b.size()),Ap(b.size()),temp(b.size()),
 	y(b.size()),z(b.size()),w(b.size()),lastr(b.size());
 
+    auto startT = std::chrono::high_resolution_clock::now();
 	std::cout << "start!" << std::endl;
 
 	// MatrixMultVector<<<blockSize,threadSize>>>(thrust::raw_pointer_cast(&y[0]),thrust::raw_pointer_cast(&r[0]),prec.dev_matrix,prec.preA,y.size());
@@ -414,6 +415,10 @@ void PCG_ICC(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tole
 		std::cout << iter << " " << norm << std::endl;
 	}
 	x.setvalues({xx.begin(),xx.end()});
+    auto endT = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
+    
+    printf("SOLVETIME = %.5le \n", static_cast<double>(duration.count()));
 }
 
 void PCG_SSOR(const SymetrixSparseMatrix& A,Vector& x,const Vector& b,double tolerance,int limit,int& iter,double& norm)
