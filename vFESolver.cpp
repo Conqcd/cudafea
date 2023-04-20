@@ -205,8 +205,11 @@ bool vFESolver::LoadMaterials(const char *filename)
         printf("ERROR: voxel sizes must be specified before loading materials \n");
         OK = false;
     }// voxel size or voxel dimensions not specified
+
+    auto startT = std::chrono::high_resolution_clock::now();
     const int thread_num = std::thread::hardware_concurrency();
     const int max_threads = std::min((int)MateM.size(),thread_num);
+    // const int max_threads = 32;
     std::vector<std::thread> threads(max_threads);
     for (int i = 0; i < max_threads; i++)
     {
@@ -221,6 +224,11 @@ bool vFESolver::LoadMaterials(const char *filename)
     {
         entry.join();
     }
+    auto endT = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
+    
+    printf("Matrix = %.5le \n", static_cast<double>(duration.count()));
+    std::cout << std::endl;
     return OK;
 }// LoadMaterials()
 
@@ -293,6 +301,60 @@ bool vFESolver::LoadModel(const char *filename)
     return OK;
 }// LoadModel()
 
+bool vFESolver::LoadDisplacements(const char *filename)
+{
+    if(!MODEL_DONE)
+    {
+        printf("Please Load Model first!");
+        return false;
+    }
+    std::ifstream f;
+    char buff[256];
+    VecString lines;
+    VecString_it vit = lines.begin();
+    printf("Load Displacements\n");
+    try
+    {
+        f.open(filename);
+        size_t cstart;
+        std::string line;
+        getline(f, line);getline(f, line);getline(f, line);
+        for(std::string line; getline(f, line);)
+        {
+            cstart = line.find_first_not_of(" \t\n\r");
+
+            if(cstart == std::string::npos)  continue;
+            int id,x,y,z;
+            Scalar dx,dy,dz;
+            sscanf(line.c_str(), "%d %d %d %d %lf %lf %lf",&id, &x, &y, &z, &dx, &dy, &dz);
+            Node<xyzType> * tmpnode = new Node<xyzType>();
+    
+            tmpnode->x = x; tmpnode->y = y; tmpnode->z = z;
+
+            auto nitr = NodeS.find(tmpnode);
+            if(nitr == NodeS.end())
+            {
+                f.close();
+                return false;
+            }
+            else
+            {
+                (*nitr)->dx = dx;
+                (*nitr)->dy = dy;
+                (*nitr)->dz = dz;
+            }
+            delete tmpnode;
+        }
+    }// try
+    catch(std::exception &e)
+    {
+        printf("ERROR: could not open Comsol result file \n");
+        return false;
+    }// catch
+    DISPLACEMENT_DONE = true;
+    f.close();
+    return true;
+}
 
 bool vFESolver::ComsolResult2Constraint(const char *filename)
 {
@@ -1114,6 +1176,7 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     const int thread_num = std::thread::hardware_concurrency();
     // const int thread_num = 1;
     const int max_threads = std::min((int)NodeS.size(),thread_num);
+    // const int max_threads = 1;
 
     
     auto startT = std::chrono::high_resolution_clock::now();
@@ -1304,6 +1367,7 @@ bool vFESolver::ComputeGSM(Matrix& GSM)
     printf("GSM Building Time = %.5le ms\n", static_cast<double>(duration.count()));
     printf("GSM local info : mal = %lf, non-zero_allocated = %lf, non-zero_used = %lf, non-zero_unneeded = %lf \n", mal, nz_a, nz_u, nz_un);
     printf("Leaving GSM\n");
+    std::cout << std::endl;
     return true;
 }// computeGSM()
 

@@ -142,6 +142,8 @@ public:
     
     // Read model file and create Elem sets and Node sets
     bool LoadModel(const char *filename);
+
+    bool LoadDisplacements(const char *filename);
     
     bool ComsolResult2Constraint(const char *filename);
 

@@ -33,6 +33,8 @@ void VFEModel::create_command_map()
     
     CommandM["LOAD_MODEL"] = CMD_LOAD_MODEL;
     CommandM["LOAD_MCTSCAN"] = CMD_LOAD_MODEL;
+        
+    CommandM["LOAD_DISPLACEMENTS"] = CMD_LOAD_DISPLACEMENTS;
     
     CommandM["SET_TOLERANCE"] = CMD_SET_TOLERANCE;
     CommandM["TOLERANCE"] = CMD_SET_TOLERANCE;
@@ -329,6 +331,17 @@ bool VFEModel::execute_command(int command)
             break;
         }
 
+        case CMD_LOAD_DISPLACEMENTS: // TOLERANCE
+        {
+            char disfn[MAX_FILENAME_LENGTH];
+            OK = (sscanf(data, " %s \n", &disfn) == 1);
+            if(OK)
+            {
+                OK = solver.LoadDisplacements(disfn);
+            }
+            break;
+        }
+  
         case CMD_SET_TOLERANCE: // TOLERANCE
         {
             double thetolerance;
@@ -464,7 +477,7 @@ bool VFEModel::execute_command(int command)
         case CMD_PRINT_STRAIN : // PRINT DISPLACEMENTS
         {
             // only MASTER process prints displacements (for now)
-            if(solver.SOLVE_DONE)
+            if(solver.DISPLACEMENT_DONE)
             {
                 char outputfn[MAX_FILENAME_LENGTH];
                 OK = (sscanf(data, " %s \n", &outputfn) == 1);
@@ -482,7 +495,7 @@ bool VFEModel::execute_command(int command)
         case CMD_PRINT_STRESS : // PRINT DISPLACEMENTS
         {
             // only MASTER process prints displacements (for now)
-            if(solver.SOLVE_DONE)
+            if(solver.DISPLACEMENT_DONE)
             {
                 char outputfn[MAX_FILENAME_LENGTH];
                 OK = (sscanf(data, " %s \n", &outputfn) == 1);
